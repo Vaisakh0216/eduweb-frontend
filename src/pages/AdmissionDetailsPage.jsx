@@ -788,7 +788,6 @@ const AdmissionDetailsPage = () => {
   const [agents, setAgents] = useState([]);
   const [transactionRefError, setTransactionRefError] = useState("");
 
-  // Initial form states
   function getInitialPaymentForm() {
     return {
       payerType: "Student",
@@ -801,15 +800,12 @@ const AdmissionDetailsPage = () => {
       isServiceChargePayment: false,
       serviceChargeDeducted: 0,
       deductServiceCharge: false,
-      // Agent collection flow
       isAgentCollection: false,
       collectingAgentId: "",
       agentFeeDeducted: 0,
       deductAgentFee: false,
-      // Agent fee payment
       isAgentFeePayment: false,
       agentIdForFeePayment: "",
-      // Attachment
       attachmentFile: null,
     };
   }
@@ -865,22 +861,20 @@ const AdmissionDetailsPage = () => {
         notes: paymentForm.notes,
         isServiceChargePayment: paymentForm.isServiceChargePayment,
         deductServiceCharge: paymentForm.deductServiceCharge,
-        serviceChargeDeducted: paymentForm.deductServiceCharge
-          ? parseFloat(paymentForm.serviceChargeDeducted)
-          : 0,
-        // Agent collection flow
+        serviceChargeDeducted:
+          paymentForm.deductServiceCharge || paymentForm.isServiceChargePayment
+            ? parseFloat(paymentForm.serviceChargeDeducted)
+            : 0,
         isAgentCollection: paymentForm.isAgentCollection,
         collectingAgentId: paymentForm.collectingAgentId || null,
         deductAgentFee: paymentForm.deductAgentFee,
         agentFeeDeducted: paymentForm.deductAgentFee
           ? parseFloat(paymentForm.agentFeeDeducted)
           : 0,
-        // Agent fee payment
         isAgentFeePayment: paymentForm.isAgentFeePayment,
         agentIdForFeePayment: paymentForm.agentIdForFeePayment || null,
       };
 
-      // Check if there's an attachment
       if (paymentForm.attachmentFile) {
         const formData = new FormData();
         formData.append("data", JSON.stringify(paymentData));
@@ -920,12 +914,10 @@ const AdmissionDetailsPage = () => {
     }
   };
 
-  // Get available agents for this admission
   const getAdmissionAgents = () => {
     if (!data?.admission) return [];
     const admissionAgents = [];
 
-    // Check multiple agents structure
     if (data.admission.agents) {
       if (data.admission.agents.mainAgent?.agentId) {
         admissionAgents.push({
@@ -950,7 +942,6 @@ const AdmissionDetailsPage = () => {
       }
     }
 
-    // Check legacy agent structure
     if (data.admission.agent?.agentId) {
       admissionAgents.push({
         ...data.admission.agent.agentId,
@@ -962,7 +953,6 @@ const AdmissionDetailsPage = () => {
     return admissionAgents;
   };
 
-  // Check transaction reference
   const checkTransactionRef = async (ref) => {
     if (!ref || ref.trim() === "") {
       setTransactionRefError("");
@@ -1029,7 +1019,6 @@ const AdmissionDetailsPage = () => {
           Edit
         </Button>
       </PageHeader>
-
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={8}>
           <Card>
@@ -1376,7 +1365,6 @@ const AdmissionDetailsPage = () => {
           )}
         </Grid>
       </Grid>
-
       <Card>
         <Tabs
           value={activeTab}
@@ -1576,7 +1564,6 @@ const AdmissionDetailsPage = () => {
           </Box>
         )}
       </Card>
-
       {/* Add Payment Dialog */}
       <Dialog
         open={paymentDialog}
@@ -1601,8 +1588,8 @@ const AdmissionDetailsPage = () => {
                   label="Payer"
                 >
                   {PAYER_TYPES.map((t) => (
-                    <MenuItem key={t} value={t}>
-                      {t}
+                    <MenuItem key={t.value} value={t.value}>
+                      {t.label}
                     </MenuItem>
                   ))}
                 </Select>
@@ -1621,9 +1608,9 @@ const AdmissionDetailsPage = () => {
                   }
                   label="Receiver"
                 >
-                  {Object.values(RECEIVER_TYPES).map((t) => (
-                    <MenuItem key={t} value={t}>
-                      {t}
+                  {RECEIVER_TYPES.map((t) => (
+                    <MenuItem key={t.value} value={t.value}>
+                      {t.label}
                     </MenuItem>
                   ))}
                 </Select>
@@ -1664,8 +1651,8 @@ const AdmissionDetailsPage = () => {
                   label="Payment Mode"
                 >
                   {PAYMENT_MODES.map((m) => (
-                    <MenuItem key={m} value={m}>
-                      {m}
+                    <MenuItem key={m.value} value={m.value}>
+                      {m.label}
                     </MenuItem>
                   ))}
                 </Select>
@@ -1790,7 +1777,6 @@ const AdmissionDetailsPage = () => {
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val === "sc_only") {
-                            // Full amount is Service Charge
                             setPaymentForm({
                               ...paymentForm,
                               isServiceChargePayment: true,
@@ -1798,7 +1784,6 @@ const AdmissionDetailsPage = () => {
                               serviceChargeDeducted: paymentForm.amount,
                             });
                           } else if (val === "partial_sc") {
-                            // Partial SC deduction
                             setPaymentForm({
                               ...paymentForm,
                               isServiceChargePayment: false,
@@ -1809,7 +1794,6 @@ const AdmissionDetailsPage = () => {
                               ),
                             });
                           } else {
-                            // Full amount to college
                             setPaymentForm({
                               ...paymentForm,
                               isServiceChargePayment: false,
@@ -1895,7 +1879,6 @@ const AdmissionDetailsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Add Agent Payment Dialog */}
       <Dialog
         open={agentPaymentDialog}
@@ -1973,8 +1956,8 @@ const AdmissionDetailsPage = () => {
                   label="Payment Mode"
                 >
                   {PAYMENT_MODES.map((m) => (
-                    <MenuItem key={m} value={m}>
-                      {m}
+                    <MenuItem key={m.value} value={m.value}>
+                      {m.label}
                     </MenuItem>
                   ))}
                 </Select>
@@ -2017,6 +2000,7 @@ const AdmissionDetailsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      ss
     </Box>
   );
 };
