@@ -1600,7 +1600,7 @@ const AdmissionDetailsPage = () => {
                   }
                   label="Payer"
                 >
-                  {Object.values(PAYER_TYPES).map((t) => (
+                  {PAYER_TYPES.map((t) => (
                     <MenuItem key={t} value={t}>
                       {t}
                     </MenuItem>
