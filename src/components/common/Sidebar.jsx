@@ -38,25 +38,50 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
   const { user, isSuperAdmin, isAdmin } = useAuth();
 
   const menuItems = [
-    { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
+    {
+      text: "Dashboard",
+      icon: <DashboardIcon />,
+      path: "/dashboard",
+      superAdminOnly: true,
+    },
     { text: "Admissions", icon: <AssignmentIcon />, path: "/admissions" },
     { text: "Payments", icon: <PaymentIcon />, path: "/payments" },
     {
       text: "Agent Payments",
       icon: <ReceiptIcon />,
       path: "/agent-payments",
-      adminOnly: true,
+      superAdminOnly: true,
     },
     { divider: true },
-    { text: "Agents", icon: <AgentIcon />, path: "/agents" },
-    { text: "Colleges", icon: <SchoolIcon />, path: "/colleges" },
-    { text: "Courses", icon: <MenuBookIcon />, path: "/courses" },
+    {
+      text: "Agents",
+      icon: <AgentIcon />,
+      path: "/agents",
+      superAdminOnly: true,
+    },
+    {
+      text: "Colleges",
+      icon: <SchoolIcon />,
+      path: "/colleges",
+      superAdminOnly: true,
+    },
+    {
+      text: "Courses",
+      icon: <MenuBookIcon />,
+      path: "/courses",
+      superAdminOnly: true,
+    },
     { divider: true },
     { text: "Daybook", icon: <BookIcon />, path: "/daybook" },
     { text: "Cashbook", icon: <AccountBalanceIcon />, path: "/cashbook" },
     { text: "Vouchers", icon: <VoucherIcon />, path: "/vouchers" },
     { divider: true },
-    { text: "Users", icon: <PeopleIcon />, path: "/users", adminOnly: true },
+    {
+      text: "Users",
+      icon: <PeopleIcon />,
+      path: "/users",
+      superAdminOnly: true,
+    },
     {
       text: "Branches",
       icon: <BusinessIcon />,
