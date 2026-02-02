@@ -787,6 +787,7 @@ const AdmissionDetailsPage = () => {
   );
   const [agents, setAgents] = useState([]);
   const [transactionRefError, setTransactionRefError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   function getInitialPaymentForm() {
     return {
@@ -848,6 +849,11 @@ const AdmissionDetailsPage = () => {
   }, [id]);
 
   const handleAddPayment = async () => {
+    if (transactionRefError) {
+      return;
+    }
+    setSubmitting(true);
+
     try {
       const paymentData = {
         admissionId: id,
@@ -890,6 +896,8 @@ const AdmissionDetailsPage = () => {
     } catch (error) {
       console.error("Error adding payment:", error);
       alert(error.response?.data?.message || "Error adding payment");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -1873,9 +1881,11 @@ const AdmissionDetailsPage = () => {
           <Button
             variant="contained"
             onClick={handleAddPayment}
-            disabled={!!transactionRefError || !paymentForm.amount}
+            disabled={
+              submitting || !!transactionRefError || !paymentForm.amount
+            }
           >
-            Add Payment
+            {submitting ? <CircularProgress size={24} /> : "Add Payment"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2000,7 +2010,6 @@ const AdmissionDetailsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      ss
     </Box>
   );
 };
