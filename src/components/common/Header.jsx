@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -10,15 +10,15 @@ import {
   Box,
   Divider,
   ListItemIcon,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   AccountCircle,
   Logout,
   Settings,
-} from '@mui/icons-material';
-import { useAuth } from '../../context/AuthContext';
-import { getInitials } from '../../utils/formatters';
+} from "@mui/icons-material";
+import { useAuth } from "../../context/AuthContext";
+import { getInitials } from "../../utils/formatters";
 
 const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
@@ -43,9 +43,9 @@ const Header = ({ onMenuClick }) => {
       color="inherit"
       elevation={0}
       sx={{
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        backgroundColor: "background.paper",
       }}
     >
       <Toolbar>
@@ -53,7 +53,7 @@ const Header = ({ onMenuClick }) => {
           color="inherit"
           edge="start"
           onClick={onMenuClick}
-          sx={{ mr: 2, display: { md: 'none' } }}
+          sx={{ mr: 2, display: { md: "none" } }}
         >
           <MenuIcon />
         </IconButton>
@@ -61,8 +61,10 @@ const Header = ({ onMenuClick }) => {
         <Box sx={{ flexGrow: 1 }} />
 
         {/* User menu */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}
+          >
             <Typography variant="body2" fontWeight="medium">
               {user?.firstName} {user?.lastName}
             </Typography>
@@ -71,7 +73,7 @@ const Header = ({ onMenuClick }) => {
             </Typography>
           </Box>
           <IconButton onClick={handleMenuOpen} size="small">
-            <Avatar sx={{ bgcolor: 'primary.main', width: 36, height: 36 }}>
+            <Avatar sx={{ bgcolor: "red", width: 36, height: 36 }}>
               {getInitials(user?.firstName, user?.lastName)}
             </Avatar>
           </IconButton>
@@ -82,8 +84,8 @@ const Header = ({ onMenuClick }) => {
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
           onClick={handleMenuClose}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          transformOrigin={{ horizontal: "right", vertical: "top" }}
+          anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
           PaperProps={{
             sx: { width: 200, mt: 1 },
           }}
@@ -93,7 +95,7 @@ const Header = ({ onMenuClick }) => {
               {user?.firstName} {user?.lastName}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {user?.role?.replace('_', ' ')?.toUpperCase()}
+              {user?.role?.replace("_", " ")?.toUpperCase()}
             </Typography>
           </Box>
           <Divider />
