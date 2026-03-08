@@ -102,11 +102,7 @@ const AdmissionFormPage = () => {
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
 
-  const totalFee = (formData.fees?.offeredFee || 0) + (formData.fees?.admissionFee || 0) + 
-    (formData.fees?.tuitionFeeYear1 || 0) + (formData.fees?.tuitionFeeYear2 || 0) + 
-    (formData.fees?.tuitionFeeYear3 || 0) + (formData.fees?.tuitionFeeYear4 || 0) +
-    (formData.fees?.hostelIncluded ? ((formData.fees?.hostelFeeYear1 || 0) + (formData.fees?.hostelFeeYear2 || 0) + 
-    (formData.fees?.hostelFeeYear3 || 0) + (formData.fees?.hostelFeeYear4 || 0)) : 0);
+  const totalFee = (formData.fees?.admissionFee || 0) + (formData.fees?.tuitionFeeYear1 || 0);
 
   return (
     <Box>
@@ -120,7 +116,7 @@ const AdmissionFormPage = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom>Basic Information</Typography>
               <Grid container spacing={2}>
-                <Grid item xs={6} md={3}><DatePicker label="Admission Date" value={formData.admissionDate ? new Date(formData.admissionDate) : null} onChange={(d) => setFormData(prev => ({ ...prev, admissionDate: d }))} slotProps={{ textField: { fullWidth: true } }} /></Grid>
+                <Grid item xs={6} md={3}><DatePicker label="Admission Date" value={formData.admissionDate ? new Date(formData.admissionDate) : null} onChange={(d) => setFormData(prev => ({ ...prev, admissionDate: d }))} format="dd/MM/yyyy" slotProps={{ textField: { fullWidth: true } }} /></Grid>
                 <Grid item xs={6} md={3}><FormControl fullWidth><InputLabel>Branch</InputLabel><Select value={formData.branchId} onChange={(e) => setFormData(prev => ({ ...prev, branchId: e.target.value }))} label="Branch">{branches.map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}</Select></FormControl></Grid>
                 <Grid item xs={6} md={3}><FormControl fullWidth><InputLabel>Academic Year</InputLabel><Select value={formData.academicYear} onChange={(e) => setFormData(prev => ({ ...prev, academicYear: e.target.value }))} label="Academic Year">{ACADEMIC_YEARS.map(y => <MenuItem key={y.value} value={y.value}>{y.label}</MenuItem>)}</Select></FormControl></Grid>
                 <Grid item xs={6} md={3}><FormControl fullWidth><InputLabel>Status</InputLabel><Select value={formData.admissionStatus} onChange={(e) => setFormData(prev => ({ ...prev, admissionStatus: e.target.value }))} label="Status">{ADMISSION_STATUS_OPTIONS.map(s => <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>)}</Select></FormControl></Grid>
@@ -137,7 +133,7 @@ const AdmissionFormPage = () => {
                 <Grid item xs={6}><TextField fullWidth label="Last Name" value={formData.student?.lastName || ''} onChange={(e) => setFormData(prev => ({ ...prev, student: { ...prev.student, lastName: e.target.value } }))} /></Grid>
                 <Grid item xs={6}><TextField fullWidth label="Phone" value={formData.student?.phone || ''} onChange={(e) => setFormData(prev => ({ ...prev, student: { ...prev.student, phone: e.target.value } }))} /></Grid>
                 <Grid item xs={6}><TextField fullWidth label="Email" value={formData.student?.email || ''} onChange={(e) => setFormData(prev => ({ ...prev, student: { ...prev.student, email: e.target.value } }))} /></Grid>
-                <Grid item xs={4}><DatePicker label="Date of Birth" value={formData.student?.dob ? new Date(formData.student.dob) : null} onChange={(d) => setFormData(prev => ({ ...prev, student: { ...prev.student, dob: d } }))} slotProps={{ textField: { fullWidth: true } }} /></Grid>
+                <Grid item xs={4}><DatePicker label="Date of Birth" value={formData.student?.dob ? new Date(formData.student.dob) : null} onChange={(d) => setFormData(prev => ({ ...prev, student: { ...prev.student, dob: d } }))} format="dd/MM/yyyy" slotProps={{ textField: { fullWidth: true } }} /></Grid>
                 <Grid item xs={4}><FormControl fullWidth><InputLabel>Gender</InputLabel><Select value={formData.student?.gender || ''} onChange={(e) => setFormData(prev => ({ ...prev, student: { ...prev.student, gender: e.target.value } }))} label="Gender"><MenuItem value="">Select</MenuItem>{GENDERS.map(g => <MenuItem key={g.value} value={g.value}>{g.label}</MenuItem>)}</Select></FormControl></Grid>
                 <Grid item xs={4}><FormControl fullWidth><InputLabel>Religion</InputLabel><Select value={formData.student?.religion || ''} onChange={(e) => setFormData(prev => ({ ...prev, student: { ...prev.student, religion: e.target.value } }))} label="Religion"><MenuItem value="">Select</MenuItem>{RELIGIONS.map(r => <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>)}</Select></FormControl></Grid>
                 <Grid item xs={4}><FormControl fullWidth><InputLabel>Qualification</InputLabel><Select value={formData.student?.highestQualification || ''} onChange={(e) => setFormData(prev => ({ ...prev, student: { ...prev.student, highestQualification: e.target.value } }))} label="Qualification"><MenuItem value="">Select</MenuItem>{QUALIFICATIONS.map(q => <MenuItem key={q.value} value={q.value}>{q.label}</MenuItem>)}</Select></FormControl></Grid>
@@ -167,15 +163,15 @@ const AdmissionFormPage = () => {
               <Grid container spacing={2}>
                 <Grid item xs={12}><Typography variant="subtitle2" color="text.secondary">Main Agent</Typography></Grid>
                 <Grid item xs={6}><FormControl fullWidth><InputLabel>Main Agent</InputLabel><Select value={formData.agents?.mainAgent?.agentId || ''} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, mainAgent: { ...prev.agents?.mainAgent, agentId: e.target.value } } }))} label="Main Agent"><MenuItem value="">None</MenuItem>{agents.main?.map(a => <MenuItem key={a._id} value={a._id}>{a.name}</MenuItem>)}</Select></FormControl></Grid>
-                <Grid item xs={6}><TextField fullWidth label="Main Agent Fee" type="number" value={formData.agents?.mainAgent?.agentFee || 0} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, mainAgent: { ...prev.agents?.mainAgent, agentFee: parseFloat(e.target.value) || 0 } } }))} /></Grid>
+                <Grid item xs={6}><TextField fullWidth label="Main Agent Fee" type="number" value={formData.agents?.mainAgent?.agentFee || ''} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, mainAgent: { ...prev.agents?.mainAgent, agentFee: parseFloat(e.target.value) || 0 } } }))} /></Grid>
                 
                 <Grid item xs={12}><Typography variant="subtitle2" color="text.secondary">College Agent</Typography></Grid>
                 <Grid item xs={6}><FormControl fullWidth><InputLabel>College Agent</InputLabel><Select value={formData.agents?.collegeAgent?.agentId || ''} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, collegeAgent: { ...prev.agents?.collegeAgent, agentId: e.target.value } } }))} label="College Agent"><MenuItem value="">None</MenuItem>{agents.college?.map(a => <MenuItem key={a._id} value={a._id}>{a.name}</MenuItem>)}</Select></FormControl></Grid>
-                <Grid item xs={6}><TextField fullWidth label="College Agent Fee" type="number" value={formData.agents?.collegeAgent?.agentFee || 0} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, collegeAgent: { ...prev.agents?.collegeAgent, agentFee: parseFloat(e.target.value) || 0 } } }))} /></Grid>
+                <Grid item xs={6}><TextField fullWidth label="College Agent Fee" type="number" value={formData.agents?.collegeAgent?.agentFee || ''} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, collegeAgent: { ...prev.agents?.collegeAgent, agentFee: parseFloat(e.target.value) || 0 } } }))} /></Grid>
                 
                 <Grid item xs={12}><Typography variant="subtitle2" color="text.secondary">Sub Agent</Typography></Grid>
                 <Grid item xs={6}><FormControl fullWidth><InputLabel>Sub Agent</InputLabel><Select value={formData.agents?.subAgent?.agentId || ''} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, subAgent: { ...prev.agents?.subAgent, agentId: e.target.value } } }))} label="Sub Agent"><MenuItem value="">None</MenuItem>{agents.sub?.map(a => <MenuItem key={a._id} value={a._id}>{a.name}</MenuItem>)}</Select></FormControl></Grid>
-                <Grid item xs={6}><TextField fullWidth label="Sub Agent Fee" type="number" value={formData.agents?.subAgent?.agentFee || 0} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, subAgent: { ...prev.agents?.subAgent, agentFee: parseFloat(e.target.value) || 0 } } }))} /></Grid>
+                <Grid item xs={6}><TextField fullWidth label="Sub Agent Fee" type="number" value={formData.agents?.subAgent?.agentFee || ''} onChange={(e) => setFormData(prev => ({ ...prev, agents: { ...prev.agents, subAgent: { ...prev.agents?.subAgent, agentFee: parseFloat(e.target.value) || 0 } } }))} /></Grid>
                 
                 <Grid item xs={12}>
                   <Box sx={{ p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
@@ -194,14 +190,14 @@ const AdmissionFormPage = () => {
             <CardContent>
               <Typography variant="h6" gutterBottom>Fees</Typography>
               <Grid container spacing={2}>
-                <Grid item xs={6}><TextField fullWidth label="Offered Fee" type="number" value={formData.fees?.offeredFee} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, offeredFee: parseFloat(e.target.value) || 0 } }))} /></Grid>
-                <Grid item xs={6}><TextField fullWidth label="Admission Fee" type="number" value={formData.fees?.admissionFee} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, admissionFee: parseFloat(e.target.value) || 0 } }))} /></Grid>
+                <Grid item xs={6}><TextField fullWidth label="Offered Fee" type="number" value={formData.fees?.offeredFee || ''} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, offeredFee: parseFloat(e.target.value) || 0 } }))} /></Grid>
+                <Grid item xs={6}><TextField fullWidth label="Admission Fee" type="number" value={formData.fees?.admissionFee || ''} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, admissionFee: parseFloat(e.target.value) || 0 } }))} /></Grid>
                 <Grid item xs={12}><Divider><Typography variant="caption">Tuition Fees</Typography></Divider></Grid>
-                {[1, 2, 3, 4].map(y => <Grid item xs={6} key={y}><TextField fullWidth label={`Year ${y}`} type="number" value={formData.fees?.[`tuitionFeeYear${y}`]} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, [`tuitionFeeYear${y}`]: parseFloat(e.target.value) || 0 } }))} /></Grid>)}
+                {[1, 2, 3, 4].map(y => <Grid item xs={6} key={y}><TextField fullWidth label={`Year ${y}`} type="number" value={formData.fees?.[`tuitionFeeYear${y}`] || ''} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, [`tuitionFeeYear${y}`]: parseFloat(e.target.value) || 0 } }))} /></Grid>)}
                 <Grid item xs={12}><FormControlLabel control={<Checkbox checked={formData.fees?.hostelIncluded} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, hostelIncluded: e.target.checked } }))} />} label="Hostel Included" /></Grid>
                 {formData.fees?.hostelIncluded && <>
                   <Grid item xs={12}><Divider><Typography variant="caption">Hostel Fees</Typography></Divider></Grid>
-                  {[1, 2, 3, 4].map(y => <Grid item xs={6} key={y}><TextField fullWidth label={`Year ${y}`} type="number" value={formData.fees?.[`hostelFeeYear${y}`]} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, [`hostelFeeYear${y}`]: parseFloat(e.target.value) || 0 } }))} /></Grid>)}
+                  {[1, 2, 3, 4].map(y => <Grid item xs={6} key={y}><TextField fullWidth label={`Year ${y}`} type="number" value={formData.fees?.[`hostelFeeYear${y}`] || ''} onChange={(e) => setFormData(prev => ({ ...prev, fees: { ...prev.fees, [`hostelFeeYear${y}`]: parseFloat(e.target.value) || 0 } }))} /></Grid>)}
                 </>}
                 <Grid item xs={12}><Box sx={{ p: 2, bgcolor: 'primary.light', color: 'white', borderRadius: 1, textAlign: 'center' }}><Typography variant="body2">Total Fee</Typography><Typography variant="h5">₹{totalFee.toLocaleString()}</Typography></Box></Grid>
               </Grid>
@@ -212,7 +208,7 @@ const AdmissionFormPage = () => {
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>Service Charge</Typography>
-                <TextField fullWidth label="Service Charge Agreed" type="number" value={formData.serviceCharge?.agreed} onChange={(e) => setFormData(prev => ({ ...prev, serviceCharge: { ...prev.serviceCharge, agreed: parseFloat(e.target.value) || 0 } }))} />
+                <TextField fullWidth label="Service Charge Agreed" type="number" value={formData.serviceCharge?.agreed || ''} onChange={(e) => setFormData(prev => ({ ...prev, serviceCharge: { ...prev.serviceCharge, agreed: parseFloat(e.target.value) || 0 } }))} />
               </CardContent>
             </Card>
           )}

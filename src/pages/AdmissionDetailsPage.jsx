@@ -638,7 +638,7 @@
 //                       fullWidth
 //                       label="Service Charge to Deduct"
 //                       type="number"
-//                       value={paymentForm.serviceChargeDeducted}
+//                       value={paymentForm.serviceChargeDeducted || ''}
 //                       onChange={(e) => setPaymentForm({
 //                         ...paymentForm,
 //                         serviceChargeDeducted: Math.min(parseFloat(e.target.value) || 0, admission.serviceCharge?.due || 0, paymentForm.amount)
@@ -1631,6 +1631,7 @@ const AdmissionDetailsPage = () => {
                 onChange={(date) =>
                   setPaymentForm({ ...paymentForm, paymentDate: date })
                 }
+                format="dd/MM/yyyy"
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>
@@ -1639,7 +1640,7 @@ const AdmissionDetailsPage = () => {
                 fullWidth
                 label="Amount"
                 type="number"
-                value={paymentForm.amount}
+                value={paymentForm.amount || ''}
                 onChange={(e) =>
                   setPaymentForm({ ...paymentForm, amount: e.target.value })
                 }
@@ -1831,7 +1832,7 @@ const AdmissionDetailsPage = () => {
                           fullWidth
                           label="Service Charge to Deduct"
                           type="number"
-                          value={paymentForm.serviceChargeDeducted}
+                          value={paymentForm.serviceChargeDeducted || ''}
                           onChange={(e) =>
                             setPaymentForm({
                               ...paymentForm,
@@ -1935,6 +1936,7 @@ const AdmissionDetailsPage = () => {
                     paymentDate: date,
                   })
                 }
+                format="dd/MM/yyyy"
                 slotProps={{ textField: { fullWidth: true } }}
               />
             </Grid>
@@ -1943,7 +1945,7 @@ const AdmissionDetailsPage = () => {
                 fullWidth
                 label="Amount"
                 type="number"
-                value={agentPaymentForm.amount}
+                value={agentPaymentForm.amount || ''}
                 onChange={(e) =>
                   setAgentPaymentForm({
                     ...agentPaymentForm,

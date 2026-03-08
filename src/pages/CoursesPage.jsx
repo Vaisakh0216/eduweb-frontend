@@ -105,11 +105,11 @@ const CoursesPage = () => {
             <Grid item xs={3}><TextField fullWidth label="Duration (Years)" type="number" value={formData.duration?.years} onChange={(e) => setFormData({ ...formData, duration: { years: parseInt(e.target.value) } })} /></Grid>
             <Grid item xs={12}><Box sx={{ mt: 2 }}><strong>Tuition Fees</strong></Box></Grid>
             {[1, 2, 3, 4].map(y => (
-              <Grid item xs={3} key={y}><TextField fullWidth label={`Year ${y}`} type="number" value={formData.fees?.[`year${y}`] || 0} onChange={(e) => setFormData({ ...formData, fees: { ...formData.fees, [`year${y}`]: parseInt(e.target.value) || 0 } })} /></Grid>
+              <Grid item xs={3} key={y}><TextField fullWidth label={`Year ${y}`} type="number" value={formData.fees?.[`year${y}`] || ''} onChange={(e) => setFormData({ ...formData, fees: { ...formData.fees, [`year${y}`]: parseInt(e.target.value) || 0 } })} /></Grid>
             ))}
             <Grid item xs={12}><Box sx={{ mt: 1 }}><strong>Hostel Fees</strong></Box></Grid>
             {[1, 2, 3, 4].map(y => (
-              <Grid item xs={3} key={y}><TextField fullWidth label={`Year ${y}`} type="number" value={formData.hostelFees?.[`year${y}`] || 0} onChange={(e) => setFormData({ ...formData, hostelFees: { ...formData.hostelFees, [`year${y}`]: parseInt(e.target.value) || 0 } })} /></Grid>
+              <Grid item xs={3} key={y}><TextField fullWidth label={`Year ${y}`} type="number" value={formData.hostelFees?.[`year${y}`] || ''} onChange={(e) => setFormData({ ...formData, hostelFees: { ...formData.hostelFees, [`year${y}`]: parseInt(e.target.value) || 0 } })} /></Grid>
             ))}
           </Grid>
         </DialogContent>

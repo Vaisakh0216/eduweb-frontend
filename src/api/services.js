@@ -112,6 +112,9 @@ export const daybookService = {
   create: (data) => api.post('/daybook', data),
   update: (id, data) => api.put(`/daybook/${id}`, data),
   delete: (id) => api.delete(`/daybook/${id}`),
+  uploadAttachment: (id, formData) => api.post(`/daybook/${id}/attachments`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  removeAttachment: (id, attachmentId) => api.delete(`/daybook/${id}/attachments/${attachmentId}`),
+  getAttachment: (id, attachmentId) => `${api.defaults.baseURL}/daybook/${id}/attachments/${attachmentId}`,
 };
 
 // Cashbook

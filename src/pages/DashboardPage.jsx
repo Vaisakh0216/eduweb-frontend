@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -10,8 +10,8 @@ import {
   Select,
   MenuItem,
   CircularProgress,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+} from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
   TrendingUp,
   TrendingDown,
@@ -21,7 +21,7 @@ import {
   AssignmentTurnedIn,
   Pending,
   Cancel,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 import {
   LineChart,
   Line,
@@ -36,14 +36,14 @@ import {
   Cell,
   BarChart,
   Bar,
-} from 'recharts';
-import PageHeader from '../components/common/PageHeader';
-import StatCard from '../components/common/StatCard';
-import { dashboardService, branchService } from '../api/services';
-import { useAuth } from '../context/AuthContext';
-import { formatCurrency } from '../utils/formatters';
+} from "recharts";
+import PageHeader from "../components/common/PageHeader";
+import StatCard from "../components/common/StatCard";
+import { dashboardService, branchService } from "../api/services";
+import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../utils/formatters";
 
-const COLORS = ['#4caf50', '#ff9800', '#f44336'];
+const COLORS = ["#4caf50", "#ff9800", "#f44336"];
 
 const DashboardPage = () => {
   const { user, isSuperAdmin, isStaff } = useAuth();
@@ -53,7 +53,7 @@ const DashboardPage = () => {
   const [admissionTrend, setAdmissionTrend] = useState([]);
   const [branches, setBranches] = useState([]);
   const [filters, setFilters] = useState({
-    branchId: '',
+    branchId: "",
     startDate: null,
     endDate: null,
     year: new Date().getFullYear(),
@@ -72,7 +72,7 @@ const DashboardPage = () => {
       const response = await branchService.getActive();
       setBranches(response.data.data);
     } catch (error) {
-      console.error('Failed to fetch branches:', error);
+      console.error("Failed to fetch branches:", error);
     }
   };
 
@@ -96,21 +96,23 @@ const DashboardPage = () => {
       setMonthlyTrend(monthlyRes.data.data);
       setAdmissionTrend(admissionRes.data.data);
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
+      console.error("Failed to fetch dashboard data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const admissionPieData = stats ? [
-    { name: 'Confirmed', value: stats.admissions?.confirmed || 0 },
-    { name: 'Pending', value: stats.admissions?.pending || 0 },
-    { name: 'Cancelled', value: stats.admissions?.cancelled || 0 },
-  ] : [];
+  const admissionPieData = stats
+    ? [
+        { name: "Confirmed", value: stats.admissions?.confirmed || 0 },
+        { name: "Pending", value: stats.admissions?.pending || 0 },
+        { name: "Cancelled", value: stats.admissions?.cancelled || 0 },
+      ]
+    : [];
 
   if (loading && !stats) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
         <CircularProgress />
       </Box>
     );
@@ -118,18 +120,30 @@ const DashboardPage = () => {
 
   return (
     <Box>
-      <PageHeader title="Dashboard" subtitle={`Welcome back, ${user?.firstName}!`} />
+      <PageHeader
+        title="Dashboard"
+        subtitle={`Welcome back, ${user?.firstName}!`}
+      />
 
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
             {(isSuperAdmin || user?.branches?.length > 1) && (
               <FormControl size="small" sx={{ minWidth: 200 }}>
                 <InputLabel>Branch</InputLabel>
                 <Select
                   value={filters.branchId}
-                  onChange={(e) => setFilters({ ...filters, branchId: e.target.value })}
+                  onChange={(e) =>
+                    setFilters({ ...filters, branchId: e.target.value })
+                  }
                   label="Branch"
                 >
                   <MenuItem value="">All Branches</MenuItem>
@@ -145,13 +159,15 @@ const DashboardPage = () => {
               label="Start Date"
               value={filters.startDate}
               onChange={(date) => setFilters({ ...filters, startDate: date })}
-              slotProps={{ textField: { size: 'small', sx: { width: 160 } } }}
+              format="dd/MM/yyyy"
+              slotProps={{ textField: { size: "small", sx: { width: 160 } } }}
             />
             <DatePicker
               label="End Date"
               value={filters.endDate}
               onChange={(date) => setFilters({ ...filters, endDate: date })}
-              slotProps={{ textField: { size: 'small', sx: { width: 160 } } }}
+              format="dd/MM/yyyy"
+              slotProps={{ textField: { size: "small", sx: { width: 160 } } }}
             />
           </Box>
         </CardContent>
@@ -180,7 +196,9 @@ const DashboardPage = () => {
             title="Net Profit"
             value={formatCurrency(stats?.financial?.netProfit || 0)}
             icon={<AccountBalance />}
-            color={(stats?.financial?.netProfit || 0) >= 0 ? 'primary' : 'error'}
+            color={
+              (stats?.financial?.netProfit || 0) >= 0 ? "primary" : "error"
+            }
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2.4}>
@@ -291,7 +309,7 @@ const DashboardPage = () => {
       {/* Charts */}
       <Grid container spacing={3}>
         {/* Monthly Income vs Expense */}
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -327,7 +345,7 @@ const DashboardPage = () => {
         </Grid>
 
         {/* Admission Status Pie */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>

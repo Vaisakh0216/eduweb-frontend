@@ -125,6 +125,7 @@ const SearchFilters = ({
                   label="Start Date"
                   value={values.startDate || null}
                   onChange={(date) => handleChange('startDate', date)}
+                  format="dd/MM/yyyy"
                   slotProps={{
                     textField: { size: 'small', sx: { width: 150 } },
                   }}
@@ -133,6 +134,7 @@ const SearchFilters = ({
                   label="End Date"
                   value={values.endDate || null}
                   onChange={(date) => handleChange('endDate', date)}
+                  format="dd/MM/yyyy"
                   slotProps={{
                     textField: { size: 'small', sx: { width: 150 } },
                   }}
@@ -177,6 +179,7 @@ const SearchFilters = ({
                   label="Start Date"
                   value={values.startDate || null}
                   onChange={(date) => handleChange('startDate', date)}
+                  format="dd/MM/yyyy"
                   slotProps={{
                     textField: { size: 'small', sx: { width: 150 } },
                   }}
@@ -185,6 +188,7 @@ const SearchFilters = ({
                   label="End Date"
                   value={values.endDate || null}
                   onChange={(date) => handleChange('endDate', date)}
+                  format="dd/MM/yyyy"
                   slotProps={{
                     textField: { size: 'small', sx: { width: 150 } },
                   }}
