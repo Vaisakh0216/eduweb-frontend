@@ -685,7 +685,9 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
+  ListSubheader,
   Paper,
+  Alert,
 } from "@mui/material";
 import {
   Edit,
@@ -695,6 +697,8 @@ import {
   CloudUpload,
   InsertDriveFile,
   Close,
+  DeleteSweep,
+  Warning,
 } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import PageHeader from "../components/common/PageHeader";
@@ -708,7 +712,11 @@ import {
   formatDate,
   formatCategoryLabel,
 } from "../utils/formatters";
-import { DAYBOOK_CATEGORIES } from "../utils/constants";
+import {
+  DAYBOOK_TRANSACTION_TYPES,
+  DAYBOOK_EXPENSE_CATEGORY_GROUPS,
+  DAYBOOK_ACCOUNTS,
+} from "../utils/constants";
 
 const MONTHS = [
   { value: 1, label: "January" },
@@ -740,7 +748,7 @@ const DaybookPage = () => {
   const [branches, setBranches] = useState([]);
   const [filters, setFilters] = useState({
     branchId: "",
-    category: "",
+    transactionType: "",
     startDate: null,
     endDate: null,
   });
@@ -751,7 +759,10 @@ const DaybookPage = () => {
   const [monthYear, setMonthYear] = useState({ month: "", year: THIS_YEAR });
   const [formData, setFormData] = useState({
     branchId: "",
-    category: "misc",
+    transactionType: "expense",
+    category: "",
+    account: "Cash",
+    paymentMonth: "",
     amount: 0,
     description: "",
     remarks: "",
@@ -760,6 +771,12 @@ const DaybookPage = () => {
     date: new Date(),
   });
   const [attachmentFile, setAttachmentFile] = useState(null);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
+  const [clearBranchId, setClearBranchId] = useState("");
+  const [clearType, setClearType] = useState("soft");
+  const [clearLoading, setClearLoading] = useState(false);
+  const [clearError, setClearError] = useState("");
+  const [clearSuccess, setClearSuccess] = useState("");
 
   useEffect(() => {
     branchService.getActive().then((res) => setBranches(res.data.data));
@@ -877,6 +894,46 @@ const DaybookPage = () => {
     }
   };
 
+  const handleOpenClearDialog = () => {
+    setClearDialogOpen(true);
+    setClearBranchId("");
+    setClearType("soft");
+    setClearError("");
+    setClearSuccess("");
+  };
+
+  const handleCloseClearDialog = () => {
+    setClearDialogOpen(false);
+    setClearError("");
+    setClearSuccess("");
+  };
+
+  const handleClearDaybook = async () => {
+    setClearLoading(true);
+    setClearError("");
+    setClearSuccess("");
+    try {
+      const params = clearBranchId ? { branchId: clearBranchId } : {};
+      const res =
+        clearType === "hard"
+          ? await daybookService.hardClear(params)
+          : await daybookService.clear(params);
+      setClearSuccess(
+        res.data.message ||
+          `${res.data.data.deletedCount} entries cleared successfully`
+      );
+      setTimeout(() => {
+        fetchEntries();
+        fetchSummary();
+        handleCloseClearDialog();
+      }, 1500);
+    } catch (e) {
+      setClearError(e.response?.data?.message || "Failed to clear daybook");
+    } finally {
+      setClearLoading(false);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       await daybookService.delete(deleteDialog.id);
@@ -916,7 +973,10 @@ const DaybookPage = () => {
     setAttachmentFile(null);
     setFormData({
       branchId: branches[0]?._id || "",
-      category: "misc",
+      transactionType: "expense",
+      category: "",
+      account: "Cash",
+      paymentMonth: "",
       amount: 0,
       description: "",
       remarks: "",
@@ -932,7 +992,10 @@ const DaybookPage = () => {
     setAttachmentFile(null);
     setFormData({
       branchId: row.branchId?._id || "",
-      category: row.category || "misc",
+      transactionType: row.transactionType || "expense",
+      category: row.category || "",
+      account: row.account || "Cash",
+      paymentMonth: row.paymentMonth || "",
       amount: row.amount || 0,
       description: row.description || "",
       remarks: row.remarks || "",
@@ -943,10 +1006,15 @@ const DaybookPage = () => {
     setDialogOpen(true);
   };
 
-  // Get category type (income/expense) for display
-  const getCategoryType = (category) => {
-    const incomeCategories = ["student_fee", "service_charge", "other_income"];
-    return incomeCategories.includes(category) ? "income" : "expense";
+  // Get transaction type for display (amount color)
+  const getRowType = (row) => {
+    if (row.transactionType) return row.transactionType;
+    const incomeCategories = [
+      "received_from_student",
+      "received_from_college_service_charge",
+      "service_charge_income",
+    ];
+    return incomeCategories.includes(row.category) ? "income" : "expense";
   };
 
   const columns = [
@@ -989,12 +1057,12 @@ const DaybookPage = () => {
       renderCell: (row) => (
         <Typography
           color={
-            getCategoryType(row.category) === "income"
+            getRowType(row) === "income"
               ? "success.main"
               : "error.main"
           }
         >
-          {getCategoryType(row.category) === "income" ? "+" : "-"}
+          {getRowType(row) === "income" ? "+" : "-"}
           {formatCurrency(row.amount)}
         </Typography>
       ),
@@ -1061,7 +1129,11 @@ const DaybookPage = () => {
       label: "Branch",
       options: branches.map((b) => ({ value: b._id, label: b.name })),
     },
-    { field: "category", label: "Category", options: DAYBOOK_CATEGORIES },
+    {
+      field: "transactionType",
+      label: "Type",
+      options: DAYBOOK_TRANSACTION_TYPES,
+    },
   ];
 
   // Check if current category is salary to show Paid To field
@@ -1082,6 +1154,16 @@ const DaybookPage = () => {
         >
           Export CSV
         </Button>
+        {isSuperAdmin && (
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteSweep />}
+            onClick={handleOpenClearDialog}
+          >
+            Clear Daybook
+          </Button>
+        )}
       </PageHeader>
 
       {summary && (
@@ -1228,19 +1310,84 @@ const DaybookPage = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12}>
+            <Grid item xs={formData.transactionType === "expense" ? 6 : 12}>
               <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
+                <InputLabel>Transaction Type</InputLabel>
                 <Select
-                  value={formData.category}
+                  value={formData.transactionType}
                   onChange={(e) =>
-                    setFormData({ ...formData, category: e.target.value })
+                    setFormData({
+                      ...formData,
+                      transactionType: e.target.value,
+                      category: "",
+                    })
                   }
-                  label="Category"
+                  label="Transaction Type"
                 >
-                  {DAYBOOK_CATEGORIES.map((c) => (
-                    <MenuItem key={c.value} value={c.value}>
-                      {c.label}
+                  {DAYBOOK_TRANSACTION_TYPES.map((t) => (
+                    <MenuItem key={t.value} value={t.value}>
+                      {t.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {formData.transactionType === "expense" && (
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Expense Category</InputLabel>
+                  <Select
+                    value={formData.category}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
+                    }
+                    label="Expense Category"
+                  >
+                    {DAYBOOK_EXPENSE_CATEGORY_GROUPS.map((group) => [
+                      <ListSubheader key={group.group}>{group.group}</ListSubheader>,
+                      ...group.items.map((item) => (
+                        <MenuItem key={item.value} value={item.value} sx={{ pl: 3 }}>
+                          {item.label}
+                        </MenuItem>
+                      )),
+                    ])}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Account</InputLabel>
+                <Select
+                  value={formData.account}
+                  onChange={(e) =>
+                    setFormData({ ...formData, account: e.target.value })
+                  }
+                  label="Account"
+                >
+                  {DAYBOOK_ACCOUNTS.map((a) => (
+                    <MenuItem key={a.value} value={a.value}>
+                      {a.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Payment Month</InputLabel>
+                <Select
+                  value={formData.paymentMonth}
+                  onChange={(e) =>
+                    setFormData({ ...formData, paymentMonth: e.target.value })
+                  }
+                  label="Payment Month"
+                >
+                  <MenuItem value="">— None —</MenuItem>
+                  {MONTHS.map((m) => (
+                    <MenuItem key={m.value} value={m.label}>
+                      {m.label}
                     </MenuItem>
                   ))}
                 </Select>
@@ -1409,6 +1556,104 @@ const DaybookPage = () => {
         onConfirm={handleDelete}
         onCancel={() => setDeleteDialog({ open: false, id: null })}
       />
+
+      {/* Clear Daybook Dialog */}
+      <Dialog
+        open={clearDialogOpen}
+        onClose={handleCloseClearDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Warning color="error" />
+          Clear Daybook
+        </DialogTitle>
+        <DialogContent>
+          {clearError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {clearError}
+            </Alert>
+          )}
+          {clearSuccess && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {clearSuccess}
+            </Alert>
+          )}
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            This action will delete daybook entries. Please proceed with caution.
+          </Alert>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Branch (Optional)</InputLabel>
+                <Select
+                  value={clearBranchId}
+                  onChange={(e) => setClearBranchId(e.target.value)}
+                  label="Branch (Optional)"
+                >
+                  <MenuItem value="">All Branches</MenuItem>
+                  {branches.map((b) => (
+                    <MenuItem key={b._id} value={b._id}>
+                      {b.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Typography variant="caption" color="text.secondary">
+                Leave empty to clear all branches
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Clear Type</InputLabel>
+                <Select
+                  value={clearType}
+                  onChange={(e) => setClearType(e.target.value)}
+                  label="Clear Type"
+                >
+                  <MenuItem value="soft">Soft Delete (Recoverable)</MenuItem>
+                  <MenuItem value="hard">Hard Delete (Permanent)</MenuItem>
+                </Select>
+              </FormControl>
+              <Typography
+                variant="caption"
+                color={clearType === "hard" ? "error" : "text.secondary"}
+              >
+                {clearType === "soft"
+                  ? "Entries will be marked as deleted but can be recovered from database"
+                  : "⚠️ WARNING: Entries will be permanently deleted and cannot be recovered!"}
+              </Typography>
+            </Grid>
+          </Grid>
+          {clearType === "hard" && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              <strong>Permanent Deletion Warning!</strong>
+              <br />
+              You are about to permanently delete{" "}
+              {clearBranchId
+                ? "all entries for the selected branch"
+                : "ALL daybook entries"}
+              . This action cannot be undone!
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseClearDialog} disabled={clearLoading}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleClearDaybook}
+            disabled={clearLoading}
+            startIcon={<DeleteSweep />}
+          >
+            {clearLoading
+              ? "Clearing..."
+              : `Clear${clearType === "hard" ? " Permanently" : ""}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

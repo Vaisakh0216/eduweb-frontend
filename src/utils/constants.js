@@ -84,6 +84,12 @@ for (let year = currentYear - 2; year <= 2030; year++) {
   ACADEMIC_YEARS.push({ value: `${year}-${year + 1}`, label: `${year}-${year + 1}` });
 }
 
+export const DAYBOOK_ACCOUNTS = [
+  { value: 'Cash', label: 'Cash' },
+  { value: 'Bank', label: 'Bank' },
+  { value: 'Petty Cash', label: 'Petty Cash' },
+];
+
 export const PAYMENT_MODES = [
   { value: 'Cash', label: 'Cash' },
   { value: 'UPI', label: 'UPI' },
@@ -97,6 +103,13 @@ export const DAYBOOK_TYPES = [
   { value: 'expense', label: 'Expense' },
 ];
 
+export const DAYBOOK_TRANSACTION_TYPES = [
+  { value: 'income', label: 'Income' },
+  { value: 'expense', label: 'Expense' },
+  { value: 'transfer', label: 'Transfer' },
+  { value: 'asset', label: 'Asset' },
+];
+
 export const DAYBOOK_CATEGORIES = [
   { value: 'electricity_bill', label: 'Electricity Bill' },
   { value: 'water_bill', label: 'Water Bill' },
@@ -108,6 +121,69 @@ export const DAYBOOK_CATEGORIES = [
   { value: 'received_from_college_service_charge', label: 'Service Charge from College' },
   { value: 'service_charge_income', label: 'Service Charge (Deducted)' },
   { value: 'misc', label: 'Miscellaneous' },
+  { value: 'wifi_phone_bill', label: 'WiFi & Phone Bill' },
+  { value: 'recharge', label: 'Recharge' },
+  { value: 'food_refreshment', label: 'Food & Refreshment' },
+  { value: 'stationery', label: 'Stationery' },
+  { value: 'printing', label: 'Printing' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'advertisement_marketing', label: 'Advertisement & Marketing' },
+  { value: 'college_visit', label: 'College Visit' },
+  { value: 'field_work', label: 'Field Work' },
+  { value: 'data_collection', label: 'Data Collection' },
+  { value: 'agent_commission', label: 'Agent Commission' },
+  { value: 'sub_agent_commission', label: 'Sub Agent Commission' },
+  { value: 'donation', label: 'Donation' },
+  { value: 'investment', label: 'Investment' },
+];
+
+export const DAYBOOK_EXPENSE_CATEGORY_GROUPS = [
+  {
+    group: 'Salary',
+    items: [
+      { value: 'salary', label: 'Salary' },
+    ],
+  },
+  {
+    group: 'Operational',
+    items: [
+      { value: 'office_rent', label: 'Office Rent' },
+      { value: 'electricity_bill', label: 'Electricity Bill' },
+      { value: 'water_bill', label: 'Water Bill' },
+      { value: 'wifi_phone_bill', label: 'WiFi & Phone Bill' },
+      { value: 'recharge', label: 'Recharge' },
+      { value: 'food_refreshment', label: 'Food & Refreshment' },
+      { value: 'stationery', label: 'Stationery' },
+      { value: 'printing', label: 'Printing' },
+      { value: 'maintenance', label: 'Maintenance' },
+    ],
+  },
+  {
+    group: 'Marketing',
+    items: [
+      { value: 'advertisement_marketing', label: 'Advertisement & Marketing' },
+      { value: 'college_visit', label: 'College Visit' },
+      { value: 'field_work', label: 'Field Work' },
+      { value: 'data_collection', label: 'Data Collection' },
+    ],
+  },
+  {
+    group: 'Commission',
+    items: [
+      { value: 'paid_to_agent', label: 'Paid to Agent' },
+      { value: 'agent_commission', label: 'Agent Commission' },
+      { value: 'sub_agent_commission', label: 'Sub Agent Commission' },
+    ],
+  },
+  {
+    group: 'Other',
+    items: [
+      { value: 'paid_to_college', label: 'Paid to College' },
+      { value: 'donation', label: 'Donation' },
+      { value: 'investment', label: 'Investment' },
+      { value: 'misc', label: 'Miscellaneous' },
+    ],
+  },
 ];
 
 export const STATUS_COLORS = {
