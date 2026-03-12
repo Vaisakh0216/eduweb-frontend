@@ -1,14 +1,38 @@
 // UsersPage.jsx
 import { useState, useEffect } from 'react';
-import { Box, IconButton, Tooltip, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Select, MenuItem, Grid, Switch, FormControlLabel } from '@mui/material';
-import { Edit, Delete, PersonOff, PersonAdd } from '@mui/icons-material';
+import { Box, IconButton, Tooltip, Chip, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel, Select, MenuItem, Grid, Alert, InputAdornment } from '@mui/material';
+import { Edit, PersonOff, Visibility, VisibilityOff } from '@mui/icons-material';
 import PageHeader from '../components/common/PageHeader';
 import DataTable from '../components/common/DataTable';
 import SearchFilters from '../components/common/SearchFilters';
-import ConfirmDialog from '../components/common/ConfirmDialog';
 import { userService, branchService } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { ROLE_LABELS } from '../utils/constants';
+
+const emptyForm = { email: '', password: '', firstName: '', lastName: '', phone: '', role: 'staff', branches: [], isActive: true };
+
+const validateForm = (formData, isEdit) => {
+  const errors = {};
+  if (!formData.firstName.trim()) errors.firstName = 'First name is required';
+  if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
+  if (!formData.email.trim()) {
+    errors.email = 'Email is required';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    errors.email = 'Enter a valid email address';
+  }
+  if (!isEdit) {
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+  }
+  if (formData.phone && !/^\+?[\d\s\-()]{7,15}$/.test(formData.phone)) {
+    errors.phone = 'Enter a valid phone number';
+  }
+  if (!formData.role) errors.role = 'Role is required';
+  return errors;
+};
 
 const UsersPage = () => {
   const { isSuperAdmin } = useAuth();
@@ -19,20 +43,14 @@ const UsersPage = () => {
   const [filters, setFilters] = useState({ search: '', role: '' });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editUser, setEditUser] = useState(null);
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
-  const [formData, setFormData] = useState({
-    email: '', password: '', firstName: '', lastName: '', phone: '', role: 'staff', branches: [], isActive: true
-  });
+  const [formData, setFormData] = useState(emptyForm);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [serverError, setServerError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => { fetchBranches(); }, []);
+  useEffect(() => { branchService.getActive().then(res => setBranches(res.data.data)).catch(console.error); }, []);
   useEffect(() => { fetchUsers(); }, [pagination.page, pagination.limit]);
-
-  const fetchBranches = async () => {
-    try {
-      const res = await branchService.getActive();
-      setBranches(res.data.data);
-    } catch (e) { console.error(e); }
-  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -45,17 +63,56 @@ const UsersPage = () => {
     finally { setLoading(false); }
   };
 
+  const openAddDialog = () => {
+    setEditUser(null);
+    setFormData(emptyForm);
+    setFieldErrors({});
+    setServerError('');
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (user) => {
+    setEditUser(user);
+    setFormData({ ...user, password: '', branches: user.branches?.map(b => b._id) || [] });
+    setFieldErrors({});
+    setServerError('');
+    setDialogOpen(true);
+  };
+
+  const handleClose = () => {
+    setDialogOpen(false);
+    setFieldErrors({});
+    setServerError('');
+  };
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear field error on change
+    if (fieldErrors[field]) setFieldErrors(prev => ({ ...prev, [field]: '' }));
+  };
+
   const handleSave = async () => {
+    const errors = validateForm(formData, !!editUser);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setSaving(true);
+    setServerError('');
     try {
       if (editUser) {
         await userService.update(editUser._id, formData);
       } else {
         await userService.create(formData);
       }
-      setDialogOpen(false);
-      setEditUser(null);
+      handleClose();
       fetchUsers();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      const msg = e.response?.data?.message || e.response?.data?.error || 'Failed to save user. Please try again.';
+      setServerError(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleToggleStatus = async (id) => {
@@ -63,12 +120,6 @@ const UsersPage = () => {
       await userService.toggleStatus(id);
       fetchUsers();
     } catch (e) { console.error(e); }
-  };
-
-  const openEditDialog = (user) => {
-    setEditUser(user);
-    setFormData({ ...user, password: '', branches: user.branches?.map(b => b._id) || [] });
-    setDialogOpen(true);
   };
 
   const columns = [
@@ -90,23 +141,99 @@ const UsersPage = () => {
 
   return (
     <Box>
-      <PageHeader title="Users" subtitle="Manage system users" actionLabel="Add User" onActionClick={() => { setEditUser(null); setFormData({ email: '', password: '', firstName: '', lastName: '', phone: '', role: 'staff', branches: [], isActive: true }); setDialogOpen(true); }} />
-      <SearchFilters searchPlaceholder="Search users..." filters={[{ field: 'role', label: 'Role', options: [{ value: 'super_admin', label: 'Super Admin' }, { value: 'admin', label: 'Admin' }, { value: 'staff', label: 'Staff' }] }]} values={filters} onChange={setFilters} onSearch={fetchUsers} />
-      <DataTable columns={columns} data={users} loading={loading} pagination={pagination} onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))} onRowsPerPageChange={(l) => setPagination(prev => ({ ...prev, limit: l, page: 1 }))} />
-      
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <PageHeader title="Users" subtitle="Manage system users" actionLabel="Add User" onActionClick={openAddDialog} />
+      <SearchFilters
+        searchPlaceholder="Search users..."
+        filters={[{ field: 'role', label: 'Role', options: [{ value: 'super_admin', label: 'Super Admin' }, { value: 'admin', label: 'Admin' }, { value: 'staff', label: 'Staff' }] }]}
+        values={filters}
+        onChange={setFilters}
+        onSearch={fetchUsers}
+      />
+      <DataTable
+        columns={columns}
+        data={users}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))}
+        onRowsPerPageChange={(l) => setPagination(prev => ({ ...prev, limit: l, page: 1 }))}
+      />
+
+      <Dialog open={dialogOpen} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>{editUser ? 'Edit User' : 'Add User'}</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={6}><TextField fullWidth label="First Name" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} /></Grid>
-            <Grid item xs={6}><TextField fullWidth label="Last Name" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} /></Grid>
-            <Grid item xs={12}><TextField fullWidth label="Email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></Grid>
-            {!editUser && <Grid item xs={12}><TextField fullWidth label="Password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} /></Grid>}
-            <Grid item xs={6}><TextField fullWidth label="Phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></Grid>
+          {serverError && <Alert severity="error" sx={{ mt: 1, mb: 2 }}>{serverError}</Alert>}
+          <Grid container spacing={2} sx={{ mt: 0 }}>
             <Grid item xs={6}>
-              <FormControl fullWidth>
+              <TextField
+                fullWidth
+                label="First Name"
+                value={formData.firstName}
+                onChange={(e) => handleChange('firstName', e.target.value)}
+                error={!!fieldErrors.firstName}
+                helperText={fieldErrors.firstName}
+                required
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Last Name"
+                value={formData.lastName}
+                onChange={(e) => handleChange('lastName', e.target.value)}
+                error={!!fieldErrors.lastName}
+                helperText={fieldErrors.lastName}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                error={!!fieldErrors.email}
+                helperText={fieldErrors.email}
+                required
+              />
+            </Grid>
+            {!editUser && (
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  error={!!fieldErrors.password}
+                  helperText={fieldErrors.password || 'Minimum 6 characters'}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(p => !p)} edge="end" size="small">
+                          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+            )}
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Phone"
+                value={formData.phone}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                error={!!fieldErrors.phone}
+                helperText={fieldErrors.phone}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth required error={!!fieldErrors.role}>
                 <InputLabel>Role</InputLabel>
-                <Select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} label="Role">
+                <Select value={formData.role} onChange={(e) => handleChange('role', e.target.value)} label="Role">
                   {isSuperAdmin && <MenuItem value="super_admin">Super Admin</MenuItem>}
                   <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="staff">Staff</MenuItem>
@@ -116,7 +243,7 @@ const UsersPage = () => {
             <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Branches</InputLabel>
-                <Select multiple value={formData.branches} onChange={(e) => setFormData({ ...formData, branches: e.target.value })} label="Branches">
+                <Select multiple value={formData.branches} onChange={(e) => handleChange('branches', e.target.value)} label="Branches">
                   {branches.map(b => <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>)}
                 </Select>
               </FormControl>
@@ -124,8 +251,10 @@ const UsersPage = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave}>Save</Button>
+          <Button onClick={handleClose} disabled={saving}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
