@@ -10,6 +10,7 @@ import {
   Select,
   MenuItem,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
@@ -21,6 +22,7 @@ import {
   AssignmentTurnedIn,
   Pending,
   Cancel,
+  LocationOn,
 } from "@mui/icons-material";
 import {
   LineChart,
@@ -122,12 +124,19 @@ const DashboardPage = () => {
     <Box>
       <PageHeader
         title="Dashboard"
-        subtitle={
-          isStaff && user?.branches?.length > 0
-            ? `Welcome back, ${user?.firstName}! · ${user.branches.map(b => b.name).join(', ')}`
-            : `Welcome back, ${user?.firstName}!`
-        }
-      />
+        subtitle={`Welcome back, ${user?.firstName}!`}
+      >
+        {isStaff && user?.branches?.length > 0 && user.branches.map(b => (
+          <Chip
+            key={b._id}
+            icon={<LocationOn fontSize="small" />}
+            label={b.name}
+            size="small"
+            color="primary"
+            variant="outlined"
+          />
+        ))}
+      </PageHeader>
 
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
