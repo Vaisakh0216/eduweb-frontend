@@ -26,6 +26,7 @@ import {
   AccountBalance as AccountBalanceIcon,
   ReceiptLong as VoucherIcon,
   SupportAgent as AgentIcon,
+  Wallet as WalletIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import Logo from "../../assets/Logo.png";
@@ -35,7 +36,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isSuperAdmin, isAdmin } = useAuth();
+  const { user, isSuperAdmin, isAdmin, isStaff } = useAuth();
 
   const menuItems = [
     {
@@ -44,7 +45,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
       path: "/dashboard",
       superAdminOnly: true,
     },
-    { text: "Admissions", icon: <AssignmentIcon />, path: "/admissions" },
+    { text: "Admissions", icon: <AssignmentIcon />, path: "/admissions", staffVisible: true },
     { text: "Payments", icon: <PaymentIcon />, path: "/payments" },
     {
       text: "Agent Payments",
@@ -74,6 +75,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
     { divider: true },
     { text: "Daybook", icon: <BookIcon />, path: "/daybook" },
     { text: "Cashbook", icon: <AccountBalanceIcon />, path: "/cashbook" },
+    { text: "Petty Cash", icon: <WalletIcon />, path: "/petty-cash", staffVisible: true },
     { text: "Vouchers", icon: <VoucherIcon />, path: "/vouchers" },
     { divider: true },
     {
@@ -94,6 +96,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
     if (item.divider) return true;
     if (item.superAdminOnly && !isSuperAdmin) return false;
     if (item.adminOnly && !isSuperAdmin && !isAdmin) return false;
+    if (isStaff && !isSuperAdmin && !isAdmin && !item.staffVisible) return false;
     return true;
   });
 

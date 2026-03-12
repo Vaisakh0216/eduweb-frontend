@@ -1136,8 +1136,6 @@ const DaybookPage = () => {
     },
   ];
 
-  // Check if current category is salary to show Paid To field
-  const isSalaryCategory = formData.category === "salary";
 
   return (
     <Box>
@@ -1419,21 +1417,17 @@ const DaybookPage = () => {
               />
             </Grid>
 
-            {/* Paid To field - only shown when category is salary */}
-            {isSalaryCategory && (
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Paid To (Employee Name)"
-                  value={formData.paidTo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, paidTo: e.target.value })
-                  }
-                  placeholder="Enter employee name"
-                  required
-                />
-              </Grid>
-            )}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Paid To"
+                value={formData.paidTo}
+                onChange={(e) =>
+                  setFormData({ ...formData, paidTo: e.target.value })
+                }
+                placeholder="Enter recipient name"
+              />
+            </Grid>
 
             <Grid item xs={12}>
               <TextField

@@ -1380,8 +1380,8 @@ const AdmissionDetailsPage = () => {
           sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}
         >
           <Tab label="Payments" />
-          <Tab label="Agent Payments" />
-          <Tab label="Vouchers" />
+          {!isStaff && <Tab label="Agent Payments" />}
+          {!isStaff && <Tab label="Vouchers" />}
         </Tabs>
 
         {activeTab === 0 && (

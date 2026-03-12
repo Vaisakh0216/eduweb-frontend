@@ -17,6 +17,7 @@ import PaymentsPage from './pages/PaymentsPage';
 import AgentPaymentsPage from './pages/AgentPaymentsPage';
 import DaybookPage from './pages/DaybookPage';
 import CashbookPage from './pages/CashbookPage';
+import PettyCashPage from './pages/PettyCashPage';
 import VouchersPage from './pages/VouchersPage';
 import VoucherPrintPage from './pages/VoucherPrintPage';
 import Loading from './components/common/Loading';
@@ -63,6 +64,7 @@ function App() {
         {/* Daybook & Cashbook */}
         <Route path="/daybook" element={<DaybookPage />} />
         <Route path="/cashbook" element={<CashbookPage />} />
+        <Route path="/petty-cash" element={<PettyCashPage />} />
         
         {/* Vouchers */}
         <Route path="/vouchers" element={<VouchersPage />} />
