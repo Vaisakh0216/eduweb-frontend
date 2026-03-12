@@ -122,7 +122,11 @@ const DashboardPage = () => {
     <Box>
       <PageHeader
         title="Dashboard"
-        subtitle={`Welcome back, ${user?.firstName}!`}
+        subtitle={
+          isStaff && user?.branches?.length > 0
+            ? `Welcome back, ${user?.firstName}! · ${user.branches.map(b => b.name).join(', ')}`
+            : `Welcome back, ${user?.firstName}!`
+        }
       />
 
       {/* Filters */}
