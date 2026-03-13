@@ -11,6 +11,7 @@ import { admissionService, branchService, collegeService } from '../api/services
 import { useAuth } from '../context/AuthContext';
 import { formatDate, formatCurrency } from '../utils/formatters';
 import { ADMISSION_STATUS_OPTIONS } from '../utils/constants';
+import indiaLocations from '../data/indiaLocations.json';
 
 const AdmissionsPage = () => {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ const AdmissionsPage = () => {
     branchId: '',
     collegeId: '',
     admissionStatus: '',
+    state: '',
+    district: '',
     startDate: null,
     endDate: null,
   });
@@ -67,6 +70,8 @@ const AdmissionsPage = () => {
         branchId: filters.branchId || undefined,
         collegeId: filters.collegeId || undefined,
         admissionStatus: filters.admissionStatus || undefined,
+        state: filters.state || undefined,
+        district: filters.district || undefined,
         startDate: filters.startDate?.toISOString(),
         endDate: filters.endDate?.toISOString(),
       };
@@ -184,10 +189,19 @@ const AdmissionsPage = () => {
     },
   ];
 
+  const handleFilterChange = (newFilters) => {
+    if (newFilters.state !== filters.state) {
+      newFilters.district = '';
+    }
+    setFilters(newFilters);
+  };
+
   const filterConfig = [
     { field: 'branchId', label: 'Branch', options: branches.map(b => ({ value: b._id, label: b.name })) },
     { field: 'collegeId', label: 'College', options: colleges.map(c => ({ value: c._id, label: c.name })) },
     { field: 'admissionStatus', label: 'Status', options: ADMISSION_STATUS_OPTIONS },
+    { field: 'state', label: 'State', options: indiaLocations.states.map(s => ({ value: s, label: s })) },
+    { field: 'district', label: 'District', options: (indiaLocations.districts[filters.state] || []).map(d => ({ value: d, label: d })) },
   ];
 
   return (
@@ -203,9 +217,9 @@ const AdmissionsPage = () => {
         searchPlaceholder="Search by admission no, student name, phone..."
         filters={filterConfig}
         values={filters}
-        onChange={setFilters}
+        onChange={handleFilterChange}
         onSearch={handleSearch}
-        onClear={() => setFilters({ search: '', branchId: '', collegeId: '', admissionStatus: '', startDate: null, endDate: null })}
+        onClear={() => setFilters({ search: '', branchId: '', collegeId: '', admissionStatus: '', state: '', district: '', startDate: null, endDate: null })}
         showDateRange
       />
 

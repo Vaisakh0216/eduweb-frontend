@@ -1031,6 +1031,12 @@ const DaybookPage = () => {
       renderCell: (row) => row.branchId?.code,
     },
     {
+      field: "account",
+      headerName: "Account",
+      minWidth: 160,
+      renderCell: (row) => formatCategoryLabel(row.account),
+    },
+    {
       field: "category",
       headerName: "Category",
       minWidth: 160,
@@ -1056,11 +1062,7 @@ const DaybookPage = () => {
       align: "right",
       renderCell: (row) => (
         <Typography
-          color={
-            getRowType(row) === "income"
-              ? "success.main"
-              : "error.main"
-          }
+          color={getRowType(row) === "income" ? "success.main" : "error.main"}
         >
           {getRowType(row) === "income" ? "+" : "-"}
           {formatCurrency(row.amount)}
@@ -1135,7 +1137,6 @@ const DaybookPage = () => {
       options: DAYBOOK_TRANSACTION_TYPES,
     },
   ];
-
 
   return (
     <Box>
@@ -1343,9 +1344,15 @@ const DaybookPage = () => {
                     label="Expense Category"
                   >
                     {DAYBOOK_EXPENSE_CATEGORY_GROUPS.map((group) => [
-                      <ListSubheader key={group.group}>{group.group}</ListSubheader>,
+                      <ListSubheader key={group.group}>
+                        {group.group}
+                      </ListSubheader>,
                       ...group.items.map((item) => (
-                        <MenuItem key={item.value} value={item.value} sx={{ pl: 3 }}>
+                        <MenuItem
+                          key={item.value}
+                          value={item.value}
+                          sx={{ pl: 3 }}
+                        >
                           {item.label}
                         </MenuItem>
                       )),
@@ -1574,7 +1581,8 @@ const DaybookPage = () => {
             </Alert>
           )}
           <Alert severity="warning" sx={{ mb: 3 }}>
-            This action will delete daybook entries. Please proceed with caution.
+            This action will delete daybook entries. Please proceed with
+            caution.
           </Alert>
           <Grid container spacing={2}>
             <Grid item xs={12}>
