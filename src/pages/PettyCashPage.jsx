@@ -35,6 +35,9 @@ const emptyExpenseForm = {
   transactionRef: '',
   description: '',
   remarks: '',
+  paidTo: '',
+  paymentMonth: null,
+  attachmentFile: null,
 };
 
 function TabPanel({ children, value, index }) {
@@ -235,8 +238,18 @@ const PettyCashPage = () => {
         remarks: expenseForm.remarks,
         transactionRef: expenseForm.transactionRef,
         paymentMode: 'Cash',
+        paidTo: expenseForm.paidTo || undefined,
+        paymentMonth: expenseForm.paymentMonth
+          ? new Date(expenseForm.paymentMonth).toLocaleString('default', { month: 'long', year: 'numeric' })
+          : undefined,
       };
-      await daybookService.create(payload);
+      const res = await daybookService.create(payload);
+      const createdId = res.data.data?._id;
+      if (createdId && expenseForm.attachmentFile) {
+        const fd = new FormData();
+        fd.append('file', expenseForm.attachmentFile);
+        await daybookService.uploadAttachment(createdId, fd);
+      }
       setExpenseOpen(false);
       setExpenseForm(emptyExpenseForm);
       fetchDashboard(dashBranch);
@@ -389,14 +402,17 @@ const PettyCashPage = () => {
                       {isAdminOrSuper && !dashBranch && <TableCell>Branch</TableCell>}
                       <TableCell>Category</TableCell>
                       <TableCell>Description</TableCell>
+                      <TableCell>Pay To</TableCell>
+                      <TableCell>Month</TableCell>
                       <TableCell>Reference</TableCell>
+                      <TableCell>Attach</TableCell>
                       <TableCell align="right">Amount</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {expenseEntries.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                        <TableCell colSpan={9} align="center" sx={{ py: 3, color: 'text.secondary' }}>
                           No expense entries
                         </TableCell>
                       </TableRow>
@@ -406,7 +422,20 @@ const PettyCashPage = () => {
                         {isAdminOrSuper && !dashBranch && <TableCell>{row.branchId?.name || '-'}</TableCell>}
                         <TableCell>{formatCategoryLabel(row.category)}</TableCell>
                         <TableCell>{row.description || '-'}</TableCell>
+                        <TableCell>{row.paidTo || '-'}</TableCell>
+                        <TableCell>{row.paymentMonth || '-'}</TableCell>
                         <TableCell>{row.transactionRef || '-'}</TableCell>
+                        <TableCell>
+                          {row.attachments?.length > 0 ? (
+                            <Button
+                              size="small"
+                              variant="text"
+                              onClick={() => window.open(daybookService.getAttachment(row._id, row.attachments[0]._id), '_blank')}
+                            >
+                              View
+                            </Button>
+                          ) : '-'}
+                        </TableCell>
                         <TableCell align="right">
                           <Typography color="error.main" fontWeight="medium">
                             {formatCurrency(row.amount)}
@@ -697,6 +726,44 @@ const PettyCashPage = () => {
                   value={expenseForm.remarks}
                   onChange={e => handleExpenseChange('remarks', e.target.value)}
                 />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Pay To"
+                  fullWidth
+                  value={expenseForm.paidTo}
+                  onChange={e => handleExpenseChange('paidTo', e.target.value)}
+                  placeholder="Recipient name"
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <DatePicker
+                  label="Payment Month"
+                  value={expenseForm.paymentMonth}
+                  onChange={val => handleExpenseChange('paymentMonth', val)}
+                  views={['month', 'year']}
+                  format="MMMM yyyy"
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Button variant="outlined" component="label" size="small">
+                  {expenseForm.attachmentFile ? expenseForm.attachmentFile.name : 'Attach Receipt / Bill'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*,.pdf"
+                    onChange={e => handleExpenseChange('attachmentFile', e.target.files[0] || null)}
+                  />
+                </Button>
+                {expenseForm.attachmentFile && (
+                  <Button size="small" color="error" sx={{ ml: 1 }} onClick={() => handleExpenseChange('attachmentFile', null)}>
+                    Remove
+                  </Button>
+                )}
               </Grid>
             </Grid>
           </DialogContent>
