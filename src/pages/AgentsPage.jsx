@@ -53,7 +53,11 @@ const AgentsPage = () => {
       await agentService.delete(deleteDialog.id);
       setDeleteDialog({ open: false, id: null });
       fetchAgents();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      setDeleteDialog({ open: false, id: null });
+      alert(e.response?.data?.message || 'Error deleting agent');
+    }
   };
 
   const columns = [
@@ -70,8 +74,8 @@ const AgentsPage = () => {
           <Tooltip title="View Details"><IconButton size="small" onClick={() => navigate(`/agents/${row._id}`)}><Visibility fontSize="small" /></IconButton></Tooltip>
           {(isSuperAdmin || isAdmin) && (
             <>
-              <Tooltip title="Edit"><IconButton size="small" onClick={() => { setEditAgent(row); setFormData({ ...row }); setDialogOpen(true); }}><Edit fontSize="small" /></IconButton></Tooltip>
-              <Tooltip title="Delete"><IconButton size="small" onClick={() => setDeleteDialog({ open: true, id: row._id })}><Delete fontSize="small" /></IconButton></Tooltip>
+              <Tooltip title="Edit"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditAgent(row); setFormData({ ...row }); setDialogOpen(true); }}><Edit fontSize="small" /></IconButton></Tooltip>
+              <Tooltip title="Delete"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteDialog({ open: true, id: row._id }); }}><Delete fontSize="small" /></IconButton></Tooltip>
             </>
           )}
         </Box>

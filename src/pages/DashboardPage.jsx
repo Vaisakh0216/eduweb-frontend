@@ -55,7 +55,7 @@ const DashboardPage = () => {
   const [admissionTrend, setAdmissionTrend] = useState([]);
   const [branches, setBranches] = useState([]);
   const [filters, setFilters] = useState({
-    branchId: "",
+    branchId: isStaff && user?.branches?.length > 0 ? user.branches[0]._id : "",
     startDate: null,
     endDate: null,
     year: new Date().getFullYear(),
@@ -186,51 +186,53 @@ const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      {/* Financial Stats */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <StatCard
-            title="Total Income"
-            value={formatCurrency(stats?.financial?.totalIncome || 0)}
-            icon={<TrendingUp />}
-            color="success"
-          />
+      {/* Financial Stats - hidden for staff */}
+      {!isStaff && (
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Total Income"
+              value={formatCurrency(stats?.financial?.totalIncome || 0)}
+              icon={<TrendingUp />}
+              color="success"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Total Expense"
+              value={formatCurrency(stats?.financial?.totalExpense || 0)}
+              icon={<TrendingDown />}
+              color="error"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Net Profit"
+              value={formatCurrency(stats?.financial?.netProfit || 0)}
+              icon={<AccountBalance />}
+              color={
+                (stats?.financial?.netProfit || 0) >= 0 ? "primary" : "error"
+              }
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Cash in Hand"
+              value={formatCurrency(stats?.cashInHand || 0)}
+              icon={<Payment />}
+              color="info"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Cash in Bank"
+              value={formatCurrency(stats?.cashInBank || 0)}
+              icon={<AccountBalance />}
+              color="secondary"
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <StatCard
-            title="Total Expense"
-            value={formatCurrency(stats?.financial?.totalExpense || 0)}
-            icon={<TrendingDown />}
-            color="error"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <StatCard
-            title="Net Profit"
-            value={formatCurrency(stats?.financial?.netProfit || 0)}
-            icon={<AccountBalance />}
-            color={
-              (stats?.financial?.netProfit || 0) >= 0 ? "primary" : "error"
-            }
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <StatCard
-            title="Cash in Hand"
-            value={formatCurrency(stats?.cashInHand || 0)}
-            icon={<Payment />}
-            color="info"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <StatCard
-            title="Cash in Bank"
-            value={formatCurrency(stats?.cashInBank || 0)}
-            icon={<AccountBalance />}
-            color="secondary"
-          />
-        </Grid>
-      </Grid>
+      )}
 
       {/* Admission Stats */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -302,63 +304,67 @@ const DashboardPage = () => {
             </Card>
           </Grid>
         )}
-        <Grid item xs={12} sm={6} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Agent Payments Pending
-              </Typography>
-              <Typography variant="h5" fontWeight="bold">
-                {formatCurrency(stats?.pending?.agentPayments?.amount || 0)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {stats?.pending?.agentPayments?.count || 0} admissions
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        {!isStaff && (
+          <Grid item xs={12} sm={6} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Agent Payments Pending
+                </Typography>
+                <Typography variant="h5" fontWeight="bold">
+                  {formatCurrency(stats?.pending?.agentPayments?.amount || 0)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {stats?.pending?.agentPayments?.count || 0} admissions
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
       </Grid>
 
       {/* Charts */}
       <Grid container spacing={3}>
-        {/* Monthly Income vs Expense */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Monthly Income vs Expense
-              </Typography>
-              <Box sx={{ height: 300 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="monthName" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => formatCurrency(value)} />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="income"
-                      name="Income"
-                      stroke="#4caf50"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="expense"
-                      name="Expense"
-                      stroke="#f44336"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Monthly Income vs Expense - hidden for staff */}
+        {!isStaff && (
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Monthly Income vs Expense
+                </Typography>
+                <Box sx={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyTrend}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="monthName" />
+                      <YAxis />
+                      <Tooltip formatter={(value) => formatCurrency(value)} />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="income"
+                        name="Income"
+                        stroke="#4caf50"
+                        strokeWidth={2}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="expense"
+                        name="Expense"
+                        stroke="#f44336"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
 
         {/* Admission Status Pie */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={isStaff ? 12 : 6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>

@@ -79,9 +79,9 @@ const AdmissionFormPage = () => {
     agent: { agentType: "", agentId: "", agentFee: 0 }, // Legacy single agent
     agents: {
       // Multiple agents
-      mainAgent: { agentId: "", agentFee: 0 },
-      collegeAgent: { agentId: "", agentFee: 0 },
-      subAgent: { agentId: "", agentFee: 0 },
+      mainAgent: { agentId: "", agentFee: "" },
+      collegeAgent: { agentId: "", agentFee: "" },
+      subAgent: { agentId: "", agentFee: "" },
     },
     fees: {
       offeredFee: 0,
@@ -198,10 +198,18 @@ const AdmissionFormPage = () => {
     setSaving(true);
     setError("");
     try {
+      const payload = {
+        ...formData,
+        agents: {
+          mainAgent: { ...formData.agents?.mainAgent, agentFee: parseFloat(formData.agents?.mainAgent?.agentFee) || 0 },
+          collegeAgent: { ...formData.agents?.collegeAgent, agentFee: parseFloat(formData.agents?.collegeAgent?.agentFee) || 0 },
+          subAgent: { ...formData.agents?.subAgent, agentFee: parseFloat(formData.agents?.subAgent?.agentFee) || 0 },
+        },
+      };
       if (isEdit) {
-        await admissionService.update(id, formData);
+        await admissionService.update(id, payload);
       } else {
-        await admissionService.create(formData);
+        await admissionService.create(payload);
       }
       navigate("/admissions");
     } catch (e) {
@@ -731,7 +739,7 @@ const AdmissionFormPage = () => {
                       fullWidth
                       label="Main Agent Fee"
                       type="number"
-                      value={formData.agents?.mainAgent?.agentFee || ""}
+                      value={formData.agents?.mainAgent?.agentFee ?? ""}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -739,7 +747,7 @@ const AdmissionFormPage = () => {
                             ...prev.agents,
                             mainAgent: {
                               ...prev.agents?.mainAgent,
-                              agentFee: parseFloat(e.target.value) || 0,
+                              agentFee: e.target.value,
                             },
                           },
                         }))
@@ -785,7 +793,7 @@ const AdmissionFormPage = () => {
                       fullWidth
                       label="College Agent Fee"
                       type="number"
-                      value={formData.agents?.collegeAgent?.agentFee || ""}
+                      value={formData.agents?.collegeAgent?.agentFee ?? ""}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -793,7 +801,7 @@ const AdmissionFormPage = () => {
                             ...prev.agents,
                             collegeAgent: {
                               ...prev.agents?.collegeAgent,
-                              agentFee: parseFloat(e.target.value) || 0,
+                              agentFee: e.target.value,
                             },
                           },
                         }))
@@ -839,7 +847,7 @@ const AdmissionFormPage = () => {
                       fullWidth
                       label="Sub Agent Fee"
                       type="number"
-                      value={formData.agents?.subAgent?.agentFee || ""}
+                      value={formData.agents?.subAgent?.agentFee ?? ""}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -847,7 +855,7 @@ const AdmissionFormPage = () => {
                             ...prev.agents,
                             subAgent: {
                               ...prev.agents?.subAgent,
-                              agentFee: parseFloat(e.target.value) || 0,
+                              agentFee: e.target.value,
                             },
                           },
                         }))
@@ -860,9 +868,9 @@ const AdmissionFormPage = () => {
                       <Typography variant="body2">
                         <strong>Total Agent Fee:</strong> ₹
                         {(
-                          (formData.agents?.mainAgent?.agentFee || 0) +
-                          (formData.agents?.collegeAgent?.agentFee || 0) +
-                          (formData.agents?.subAgent?.agentFee || 0)
+                          (parseFloat(formData.agents?.mainAgent?.agentFee) || 0) +
+                          (parseFloat(formData.agents?.collegeAgent?.agentFee) || 0) +
+                          (parseFloat(formData.agents?.subAgent?.agentFee) || 0)
                         ).toLocaleString()}
                       </Typography>
                     </Box>
