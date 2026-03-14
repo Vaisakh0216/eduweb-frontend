@@ -69,6 +69,9 @@ export const admissionService = {
   update: (id, data) => api.put(`/admissions/${id}`, data),
   delete: (id) => api.delete(`/admissions/${id}`),
   recalculate: (id) => api.post(`/admissions/${id}/recalculate`),
+  uploadDocument: (id, formData) => api.post(`/admissions/${id}/documents`, formData),
+  deleteDocument: (id, documentId) => api.delete(`/admissions/${id}/documents/${documentId}`),
+  getDocument: (id, documentId) => api.get(`/admissions/${id}/documents/${documentId}`, { responseType: 'blob' }),
 };
 
 // Payments

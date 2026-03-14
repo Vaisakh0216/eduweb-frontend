@@ -758,7 +758,8 @@ import {
   Alert,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { Edit, Add, Print } from "@mui/icons-material";
+import { Edit, Add, Print, AttachFile, Delete, CloudUpload } from "@mui/icons-material";
+import { IconButton, Tooltip } from "@mui/material";
 import PageHeader from "../components/common/PageHeader";
 import StatusChip from "../components/common/StatusChip";
 import {
@@ -788,6 +789,10 @@ const AdmissionDetailsPage = () => {
   const [agents, setAgents] = useState([]);
   const [transactionRefError, setTransactionRefError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [uploadDocDialog, setUploadDocDialog] = useState(false);
+  const [docFile, setDocFile] = useState(null);
+  const [docLabel, setDocLabel] = useState("");
+  const [docUploading, setDocUploading] = useState(false);
 
   function getInitialPaymentForm() {
     return {
@@ -989,6 +994,52 @@ const AdmissionDetailsPage = () => {
   if (!data) return null;
 
   const { admission, payments, agentPayments, vouchers } = data;
+
+  const handleUploadDocument = async () => {
+    if (!docFile) return;
+    setDocUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", docFile);
+      formData.append("label", docLabel || docFile.name);
+      await admissionService.uploadDocument(id, formData);
+      setUploadDocDialog(false);
+      setDocFile(null);
+      setDocLabel("");
+      fetchAdmissionDetails();
+    } catch (error) {
+      alert(error.response?.data?.message || "Error uploading document");
+    } finally {
+      setDocUploading(false);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!window.confirm("Delete this document?")) return;
+    try {
+      await admissionService.deleteDocument(id, documentId);
+      fetchAdmissionDetails();
+    } catch (error) {
+      alert(error.response?.data?.message || "Error deleting document");
+    }
+  };
+
+  const handleOpenDocument = async (documentId, mimeType, originalName) => {
+    try {
+      const response = await admissionService.getDocument(id, documentId);
+      const url = URL.createObjectURL(new Blob([response.data], { type: mimeType }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      alert("Error opening document");
+    }
+  };
+
+  const docsTabIndex = isStaff ? 1 : 3;
 
   const handleRecalculate = async () => {
     try {
@@ -1382,6 +1433,7 @@ const AdmissionDetailsPage = () => {
           <Tab label="Payments" />
           {!isStaff && <Tab label="Agent Payments" />}
           {!isStaff && <Tab label="Vouchers" />}
+          <Tab label="Documents" />
         </Tabs>
 
         {activeTab === 0 && (
@@ -1571,7 +1623,106 @@ const AdmissionDetailsPage = () => {
             </TableContainer>
           </Box>
         )}
+        {activeTab === docsTabIndex && (
+          <Box sx={{ p: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+              <Button
+                variant="contained"
+                startIcon={<CloudUpload />}
+                onClick={() => { setDocFile(null); setDocLabel(""); setUploadDocDialog(true); }}
+              >
+                Upload Document
+              </Button>
+            </Box>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Label / File Name</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Size</TableCell>
+                    <TableCell>Uploaded</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {admission.documents?.map((doc) => (
+                    <TableRow key={doc._id}>
+                      <TableCell>{doc.label || doc.originalName}</TableCell>
+                      <TableCell>{doc.mimeType?.includes("pdf") ? "PDF" : "Image"}</TableCell>
+                      <TableCell>{doc.size ? `${(doc.size / 1024).toFixed(1)} KB` : "-"}</TableCell>
+                      <TableCell>{formatDate(doc.uploadedAt)}</TableCell>
+                      <TableCell>
+                        <Tooltip title="View">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenDocument(doc._id, doc.mimeType, doc.originalName)}
+                          >
+                            <AttachFile fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        {(isSuperAdmin || isAdmin) && (
+                          <Tooltip title="Delete">
+                            <IconButton size="small" color="error" onClick={() => handleDeleteDocument(doc._id)}>
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!admission.documents || admission.documents.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center">No documents uploaded</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        )}
       </Card>
+
+      {/* Upload Document Dialog */}
+      <Dialog open={uploadDocDialog} onClose={() => setUploadDocDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Upload Document</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Label (optional)"
+                placeholder="e.g. Offer Letter, TC, Marksheet"
+                value={docLabel}
+                onChange={(e) => setDocLabel(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button variant="outlined" component="label" startIcon={<CloudUpload />} fullWidth>
+                {docFile ? docFile.name : "Choose File (PDF / Image)"}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*,.pdf"
+                  onChange={(e) => setDocFile(e.target.files[0] || null)}
+                />
+              </Button>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUploadDocDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleUploadDocument}
+            disabled={!docFile || docUploading}
+            startIcon={docUploading ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {docUploading ? "Uploading..." : "Upload"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Add Payment Dialog */}
       <Dialog
         open={paymentDialog}
