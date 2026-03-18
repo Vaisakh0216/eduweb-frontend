@@ -5,9 +5,10 @@ import {
   FormControl, InputLabel, Select, MenuItem, TextField,
   Tab, Tabs, Alert, CircularProgress,
   ListSubheader, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Chip,
+  TableHead, TableRow, Paper, Chip, IconButton, Tooltip,
 } from '@mui/material';
-import { Add, SwapHoriz, AccountBalanceWallet, TrendingUp, TrendingDown, Refresh } from '@mui/icons-material';
+import { Add, SwapHoriz, AccountBalanceWallet, TrendingUp, TrendingDown, Refresh, Edit, Delete } from '@mui/icons-material';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import PageHeader from '../components/common/PageHeader';
@@ -84,6 +85,13 @@ const PettyCashPage = () => {
   const [expenseForm, setExpenseForm] = useState(emptyExpenseForm);
   const [expenseLoading, setExpenseLoading] = useState(false);
   const [expenseError, setExpenseError] = useState('');
+
+  // Edit/Delete state
+  const [editDialog, setEditDialog] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState({ amount: 0, date: new Date(), description: '', transactionRef: '', remarks: '' });
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
 
   // Summary state (admin)
   const [summaryData, setSummaryData] = useState([]);
@@ -260,6 +268,47 @@ const PettyCashPage = () => {
     }
   };
 
+  const openEditDialog = (row) => {
+    setEditId(row._id);
+    setEditForm({
+      amount: row.amount,
+      date: row.date ? new Date(row.date) : new Date(),
+      description: row.description || '',
+      transactionRef: row.transactionRef || '',
+      remarks: row.remarks || '',
+    });
+    setEditDialog(true);
+  };
+
+  const handleEditSubmit = async () => {
+    setEditLoading(true);
+    try {
+      await daybookService.update(editId, {
+        amount: Number(editForm.amount),
+        date: editForm.date instanceof Date ? editForm.date.toISOString() : editForm.date,
+        description: editForm.description,
+        transactionRef: editForm.transactionRef || undefined,
+        remarks: editForm.remarks,
+      });
+      setEditDialog(false);
+      fetchDashboard(dashBranch);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await daybookService.delete(deleteDialog.id);
+      setDeleteDialog({ open: false, id: null });
+      fetchDashboard(dashBranch);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const tabs = isAdminOrSuper
     ? ['Dashboard', 'Transfer', 'Summary']
     : ['Dashboard'];
@@ -366,12 +415,13 @@ const PettyCashPage = () => {
                       <TableCell>Description</TableCell>
                       <TableCell>Reference</TableCell>
                       <TableCell align="right">Amount</TableCell>
+                      {isAdminOrSuper && <TableCell>Actions</TableCell>}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {receivedEntries.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                        <TableCell colSpan={6} align="center" sx={{ py: 3, color: 'text.secondary' }}>
                           No received entries
                         </TableCell>
                       </TableRow>
@@ -386,6 +436,16 @@ const PettyCashPage = () => {
                             {formatCurrency(row.amount)}
                           </Typography>
                         </TableCell>
+                        {isAdminOrSuper && (
+                          <TableCell>
+                            <Tooltip title="Edit">
+                              <IconButton size="small" onClick={() => openEditDialog(row)}><Edit fontSize="small" /></IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete">
+                              <IconButton size="small" color="error" onClick={() => setDeleteDialog({ open: true, id: row._id })}><Delete fontSize="small" /></IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -407,12 +467,13 @@ const PettyCashPage = () => {
                       <TableCell>Reference</TableCell>
                       <TableCell>Attach</TableCell>
                       <TableCell align="right">Amount</TableCell>
+                      {isAdminOrSuper && <TableCell>Actions</TableCell>}
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {expenseEntries.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                        <TableCell colSpan={10} align="center" sx={{ py: 3, color: 'text.secondary' }}>
                           No expense entries
                         </TableCell>
                       </TableRow>
@@ -441,6 +502,16 @@ const PettyCashPage = () => {
                             {formatCurrency(row.amount)}
                           </Typography>
                         </TableCell>
+                        {isAdminOrSuper && (
+                          <TableCell>
+                            <Tooltip title="Edit">
+                              <IconButton size="small" onClick={() => openEditDialog(row)}><Edit fontSize="small" /></IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete">
+                              <IconButton size="small" color="error" onClick={() => setDeleteDialog({ open: true, id: row._id })}><Delete fontSize="small" /></IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -647,6 +718,75 @@ const PettyCashPage = () => {
             )}
           </TabPanel>
         )}
+
+        {/* Edit Entry Dialog */}
+        <Dialog open={editDialog} onClose={() => setEditDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Edit Entry</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={6}>
+                <DatePicker
+                  label="Date"
+                  value={editForm.date}
+                  onChange={(d) => setEditForm({ ...editForm, date: d })}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Amount"
+                  type="number"
+                  value={editForm.amount || ''}
+                  onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Description"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Transaction Reference"
+                  value={editForm.transactionRef}
+                  onChange={(e) => setEditForm({ ...editForm, transactionRef: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Remarks"
+                  multiline
+                  rows={2}
+                  value={editForm.remarks}
+                  onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditDialog(false)}>Cancel</Button>
+            <Button variant="contained" onClick={handleEditSubmit} disabled={editLoading || !editForm.amount}>
+              {editLoading ? <CircularProgress size={24} /> : 'Update'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirm */}
+        <ConfirmDialog
+          open={deleteDialog.open}
+          title="Delete Entry"
+          message="Are you sure you want to delete this entry? The balance will be updated."
+          confirmLabel="Delete"
+          confirmColor="error"
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteDialog({ open: false, id: null })}
+        />
 
         {/* ── ADD EXPENSE DIALOG ── */}
         <Dialog open={expenseOpen} onClose={() => setExpenseOpen(false)} maxWidth="sm" fullWidth>

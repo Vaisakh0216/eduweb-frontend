@@ -762,6 +762,7 @@ import { Edit, Add, Print, AttachFile, Delete, CloudUpload } from "@mui/icons-ma
 import { IconButton, Tooltip } from "@mui/material";
 import PageHeader from "../components/common/PageHeader";
 import StatusChip from "../components/common/StatusChip";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 import {
   admissionService,
   paymentService,
@@ -771,7 +772,7 @@ import {
 } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency, formatDate } from "../utils/formatters";
-import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES } from "../utils/constants";
+import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES, DAYBOOK_ACCOUNTS } from "../utils/constants";
 
 const AdmissionDetailsPage = () => {
   const { id } = useParams();
@@ -789,6 +790,15 @@ const AdmissionDetailsPage = () => {
   const [agents, setAgents] = useState([]);
   const [transactionRefError, setTransactionRefError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editPaymentDialog, setEditPaymentDialog] = useState(false);
+  const [editPaymentId, setEditPaymentId] = useState(null);
+  const [editPaymentForm, setEditPaymentForm] = useState({
+    amount: 0, paymentDate: new Date(), paymentMode: 'Cash', account: 'Cash',
+    transactionRef: '', notes: '',
+    isServiceChargePayment: false, serviceChargeDeducted: 0, amountDueToCollege: 0,
+    agentFeeDeducted: 0,
+  });
+  const [paymentDeleteDialog, setPaymentDeleteDialog] = useState({ open: false, id: null });
   const [uploadDocDialog, setUploadDocDialog] = useState(false);
   const [docFile, setDocFile] = useState(null);
   const [docLabel, setDocLabel] = useState("");
@@ -801,6 +811,7 @@ const AdmissionDetailsPage = () => {
       paymentDate: new Date(),
       amount: 0,
       paymentMode: "Cash",
+      account: "Cash",
       transactionRef: "",
       notes: "",
       isServiceChargePayment: false,
@@ -868,6 +879,7 @@ const AdmissionDetailsPage = () => {
         paymentDate: paymentForm.paymentDate,
         amount: parseFloat(paymentForm.amount),
         paymentMode: paymentForm.paymentMode,
+        account: paymentForm.account || "Cash",
         transactionRef: paymentForm.transactionRef,
         notes: paymentForm.notes,
         isServiceChargePayment: paymentForm.isServiceChargePayment,
@@ -903,6 +915,78 @@ const AdmissionDetailsPage = () => {
       alert(error.response?.data?.message || "Error adding payment");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openEditPaymentDialog = (p) => {
+    setEditPaymentId(p._id);
+    setEditPaymentForm({
+      amount: p.amount,
+      paymentDate: p.paymentDate ? new Date(p.paymentDate) : new Date(),
+      paymentMode: p.paymentMode,
+      account: p.account || 'Cash',
+      transactionRef: p.transactionRef || '',
+      notes: p.notes || '',
+      isServiceChargePayment: p.isServiceChargePayment || false,
+      serviceChargeDeducted: p.serviceChargeDeducted || 0,
+      amountDueToCollege: p.amountDueToCollege || 0,
+      agentFeeDeducted: p.agentFeeDeducted || 0,
+    });
+    setEditPaymentDialog(true);
+  };
+
+  // Recalculate SC-related derived values whenever amount or SC changes
+  const handleEditAmountChange = (newAmount) => {
+    const amt = parseFloat(newAmount) || 0;
+    const f = editPaymentForm;
+    let sc = f.serviceChargeDeducted;
+    let due = f.amountDueToCollege;
+    if (f.isServiceChargePayment) {
+      sc = amt;
+      due = 0;
+    } else if (sc > 0) {
+      sc = Math.min(sc, amt);
+      due = amt - sc;
+    }
+    setEditPaymentForm({ ...f, amount: newAmount, serviceChargeDeducted: sc, amountDueToCollege: due });
+  };
+
+  const handleEditScChange = (newSc) => {
+    const sc = Math.min(parseFloat(newSc) || 0, parseFloat(editPaymentForm.amount) || 0);
+    setEditPaymentForm({ ...editPaymentForm, serviceChargeDeducted: sc, amountDueToCollege: (parseFloat(editPaymentForm.amount) || 0) - sc });
+  };
+
+  const handleUpdatePayment = async () => {
+    setSubmitting(true);
+    try {
+      const amt = parseFloat(editPaymentForm.amount);
+      await paymentService.update(editPaymentId, {
+        amount: amt,
+        paymentDate: editPaymentForm.paymentDate,
+        paymentMode: editPaymentForm.paymentMode,
+        account: editPaymentForm.account || 'Cash',
+        transactionRef: editPaymentForm.transactionRef || null,
+        notes: editPaymentForm.notes,
+        serviceChargeDeducted: editPaymentForm.serviceChargeDeducted || 0,
+        amountDueToCollege: editPaymentForm.amountDueToCollege || 0,
+        agentFeeDeducted: editPaymentForm.agentFeeDeducted || 0,
+      });
+      setEditPaymentDialog(false);
+      fetchAdmissionDetails();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error updating payment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeletePayment = async () => {
+    try {
+      await paymentService.delete(paymentDeleteDialog.id);
+      setPaymentDeleteDialog({ open: false, id: null });
+      fetchAdmissionDetails();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error deleting payment');
     }
   };
 
@@ -1455,12 +1539,14 @@ const AdmissionDetailsPage = () => {
                     <TableCell>Payer</TableCell>
                     <TableCell>Receiver</TableCell>
                     <TableCell>Mode</TableCell>
+                    <TableCell>Account</TableCell>
                     <TableCell>Reference</TableCell>
                     <TableCell>Voucher</TableCell>
                     <TableCell align="right">Amount</TableCell>
                     <TableCell align="right">SC Deducted</TableCell>
                     <TableCell align="right">Agent Fee</TableCell>
                     <TableCell>Attachment</TableCell>
+                    {!isStaff && <TableCell>Actions</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -1470,6 +1556,7 @@ const AdmissionDetailsPage = () => {
                       <TableCell>{p.payerType}</TableCell>
                       <TableCell>{p.receiverType}</TableCell>
                       <TableCell>{p.paymentMode}</TableCell>
+                      <TableCell>{p.account || "Cash"}</TableCell>
                       <TableCell>{p.transactionRef || "-"}</TableCell>
                       <TableCell>{p.voucherId?.voucherNo}</TableCell>
                       <TableCell align="right">
@@ -1502,6 +1589,20 @@ const AdmissionDetailsPage = () => {
                           "-"
                         )}
                       </TableCell>
+                      {!isStaff && (
+                        <TableCell>
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={() => openEditPaymentDialog(p)}>
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton size="small" color="error" onClick={() => setPaymentDeleteDialog({ open: true, id: p._id })}>
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                   {(!payments || payments.length === 0) && (
@@ -1819,6 +1920,22 @@ const AdmissionDetailsPage = () => {
               </FormControl>
             </Grid>
             <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Account</InputLabel>
+                <Select
+                  value={paymentForm.account || "Cash"}
+                  onChange={(e) =>
+                    setPaymentForm({ ...paymentForm, account: e.target.value })
+                  }
+                  label="Account"
+                >
+                  {DAYBOOK_ACCOUNTS.map((a) => (
+                    <MenuItem key={a.value} value={a.value}>{a.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="Transaction Reference"
@@ -2041,6 +2158,163 @@ const AdmissionDetailsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Edit Payment Dialog */}
+      <Dialog open={editPaymentDialog} onClose={() => setEditPaymentDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Payment</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={6}>
+              <DatePicker
+                label="Payment Date"
+                value={editPaymentForm.paymentDate}
+                onChange={(d) => setEditPaymentForm({ ...editPaymentForm, paymentDate: d })}
+                format="dd/MM/yyyy"
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Amount"
+                type="number"
+                value={editPaymentForm.amount || ''}
+                onChange={(e) => handleEditAmountChange(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Payment Mode</InputLabel>
+                <Select
+                  value={editPaymentForm.paymentMode}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, paymentMode: e.target.value })}
+                  label="Payment Mode"
+                >
+                  {PAYMENT_MODES.map((m) => (
+                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Account</InputLabel>
+                <Select
+                  value={editPaymentForm.account || 'Cash'}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, account: e.target.value })}
+                  label="Account"
+                >
+                  {DAYBOOK_ACCOUNTS.map((a) => (
+                    <MenuItem key={a.value} value={a.value}>{a.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Transaction Reference"
+                value={editPaymentForm.transactionRef}
+                onChange={(e) => setEditPaymentForm({ ...editPaymentForm, transactionRef: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Notes"
+                multiline
+                rows={2}
+                value={editPaymentForm.notes}
+                onChange={(e) => setEditPaymentForm({ ...editPaymentForm, notes: e.target.value })}
+              />
+            </Grid>
+
+            {/* Service Charge section — shown only when this payment has SC involvement */}
+            {(editPaymentForm.isServiceChargePayment || editPaymentForm.serviceChargeDeducted > 0) && (
+              <>
+                <Grid item xs={12}>
+                  <Box sx={{ p: 1.5, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200', borderRadius: 1 }}>
+                    <Typography variant="body2" color="primary.main" fontWeight="medium" sx={{ mb: 1 }}>
+                      Service Charge
+                    </Typography>
+                    {editPaymentForm.isServiceChargePayment ? (
+                      <Typography variant="body2" color="text.secondary">
+                        This is a <strong>Service Charge Only</strong> payment — the full amount is consultancy income.
+                        SC automatically matches the amount.
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        This payment has a <strong>mixed</strong> breakdown (part SC, part college fee).
+                        Adjust the SC amount below; college due is calculated automatically.
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+
+                {!editPaymentForm.isServiceChargePayment && (
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      label="SC Deducted"
+                      type="number"
+                      value={editPaymentForm.serviceChargeDeducted || ''}
+                      onChange={(e) => handleEditScChange(e.target.value)}
+                      inputProps={{ min: 0, max: parseFloat(editPaymentForm.amount) || 0 }}
+                      helperText={`Max: ${formatCurrency(parseFloat(editPaymentForm.amount) || 0)}`}
+                    />
+                  </Grid>
+                )}
+
+                <Grid item xs={editPaymentForm.isServiceChargePayment ? 12 : 6}>
+                  <Box sx={{ p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Breakdown</Typography>
+                    <Typography variant="body2">
+                      SC: <strong>{formatCurrency(editPaymentForm.serviceChargeDeducted || 0)}</strong>
+                      {' · '}
+                      Due to College: <strong>{formatCurrency(editPaymentForm.amountDueToCollege || 0)}</strong>
+                    </Typography>
+                  </Box>
+                </Grid>
+              </>
+            )}
+
+            {/* Agent Fee section */}
+            {editPaymentForm.agentFeeDeducted > 0 && (
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Agent Fee Deducted"
+                  type="number"
+                  value={editPaymentForm.agentFeeDeducted || ''}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, agentFeeDeducted: parseFloat(e.target.value) || 0 })}
+                  inputProps={{ min: 0 }}
+                />
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditPaymentDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleUpdatePayment}
+            disabled={submitting || !editPaymentForm.amount}
+          >
+            {submitting ? <CircularProgress size={24} /> : 'Update Payment'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Payment Confirm */}
+      <ConfirmDialog
+        open={paymentDeleteDialog.open}
+        title="Delete Payment"
+        message="Are you sure you want to delete this payment? This will update all related numbers."
+        confirmLabel="Delete"
+        confirmColor="error"
+        onConfirm={handleDeletePayment}
+        onCancel={() => setPaymentDeleteDialog({ open: false, id: null })}
+      />
+
       {/* Add Agent Payment Dialog */}
       <Dialog
         open={agentPaymentDialog}

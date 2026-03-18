@@ -1034,7 +1034,7 @@ const DaybookPage = () => {
       field: "account",
       headerName: "Account",
       minWidth: 160,
-      renderCell: (row) => formatCategoryLabel(row.account),
+      renderCell: (row) => row.account || "-",
     },
     {
       field: "category",
