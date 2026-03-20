@@ -415,7 +415,7 @@ const PettyCashPage = () => {
                       <TableCell>Description</TableCell>
                       <TableCell>Reference</TableCell>
                       <TableCell align="right">Amount</TableCell>
-                      {isAdminOrSuper && <TableCell>Actions</TableCell>}
+                      <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -436,16 +436,16 @@ const PettyCashPage = () => {
                             {formatCurrency(row.amount)}
                           </Typography>
                         </TableCell>
-                        {isAdminOrSuper && (
-                          <TableCell>
-                            <Tooltip title="Edit">
-                              <IconButton size="small" onClick={() => openEditDialog(row)}><Edit fontSize="small" /></IconButton>
-                            </Tooltip>
+                        <TableCell>
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={() => openEditDialog(row)}><Edit fontSize="small" /></IconButton>
+                          </Tooltip>
+                          {isAdminOrSuper && (
                             <Tooltip title="Delete">
                               <IconButton size="small" color="error" onClick={() => setDeleteDialog({ open: true, id: row._id })}><Delete fontSize="small" /></IconButton>
                             </Tooltip>
-                          </TableCell>
-                        )}
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -467,7 +467,7 @@ const PettyCashPage = () => {
                       <TableCell>Reference</TableCell>
                       <TableCell>Attach</TableCell>
                       <TableCell align="right">Amount</TableCell>
-                      {isAdminOrSuper && <TableCell>Actions</TableCell>}
+                      <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -502,16 +502,16 @@ const PettyCashPage = () => {
                             {formatCurrency(row.amount)}
                           </Typography>
                         </TableCell>
-                        {isAdminOrSuper && (
-                          <TableCell>
-                            <Tooltip title="Edit">
-                              <IconButton size="small" onClick={() => openEditDialog(row)}><Edit fontSize="small" /></IconButton>
-                            </Tooltip>
+                        <TableCell>
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={() => openEditDialog(row)}><Edit fontSize="small" /></IconButton>
+                          </Tooltip>
+                          {isAdminOrSuper && (
                             <Tooltip title="Delete">
                               <IconButton size="small" color="error" onClick={() => setDeleteDialog({ open: true, id: row._id })}><Delete fontSize="small" /></IconButton>
                             </Tooltip>
-                          </TableCell>
-                        )}
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
