@@ -89,7 +89,7 @@ const PettyCashPage = () => {
   // Edit/Delete state
   const [editDialog, setEditDialog] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [editForm, setEditForm] = useState({ amount: 0, date: new Date(), description: '', transactionRef: '', remarks: '' });
+  const [editForm, setEditForm] = useState({ amount: 0, date: new Date(), category: '', description: '', transactionRef: '', remarks: '', paidTo: '', paymentMonth: null });
   const [editLoading, setEditLoading] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
 
@@ -273,9 +273,12 @@ const PettyCashPage = () => {
     setEditForm({
       amount: row.amount,
       date: row.date ? new Date(row.date) : new Date(),
+      category: row.category || '',
       description: row.description || '',
       transactionRef: row.transactionRef || '',
       remarks: row.remarks || '',
+      paidTo: row.paidTo || '',
+      paymentMonth: row.paymentMonth ? new Date(row.paymentMonth) : null,
     });
     setEditDialog(true);
   };
@@ -286,9 +289,12 @@ const PettyCashPage = () => {
       await daybookService.update(editId, {
         amount: Number(editForm.amount),
         date: editForm.date instanceof Date ? editForm.date.toISOString() : editForm.date,
+        category: editForm.category || undefined,
         description: editForm.description,
         transactionRef: editForm.transactionRef || undefined,
         remarks: editForm.remarks,
+        paidTo: editForm.paidTo || undefined,
+        paymentMonth: editForm.paymentMonth instanceof Date ? editForm.paymentMonth.toISOString() : (editForm.paymentMonth || undefined),
       });
       setEditDialog(false);
       fetchDashboard(dashBranch);
@@ -724,6 +730,32 @@ const PettyCashPage = () => {
           <DialogTitle>Edit Entry</DialogTitle>
           <DialogContent>
             <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={editForm.category}
+                    onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                    label="Category"
+                  >
+                    {DAYBOOK_EXPENSE_CATEGORY_GROUPS.map(group => [
+                      <ListSubheader key={group.group}>{group.group}</ListSubheader>,
+                      ...group.items.map(item => (
+                        <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>
+                      )),
+                    ])}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  fullWidth
+                  label="Amount"
+                  type="number"
+                  value={editForm.amount || ''}
+                  onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                />
+              </Grid>
               <Grid item xs={6}>
                 <DatePicker
                   label="Date"
@@ -735,10 +767,20 @@ const PettyCashPage = () => {
               <Grid item xs={6}>
                 <TextField
                   fullWidth
-                  label="Amount"
-                  type="number"
-                  value={editForm.amount || ''}
-                  onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                  label="Pay To"
+                  value={editForm.paidTo}
+                  onChange={(e) => setEditForm({ ...editForm, paidTo: e.target.value })}
+                  placeholder="Recipient name"
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <DatePicker
+                  label="Payment Month"
+                  value={editForm.paymentMonth}
+                  onChange={(val) => setEditForm({ ...editForm, paymentMonth: val })}
+                  views={['month', 'year']}
+                  format="MMMM yyyy"
+                  slotProps={{ textField: { fullWidth: true } }}
                 />
               </Grid>
               <Grid item xs={12}>
