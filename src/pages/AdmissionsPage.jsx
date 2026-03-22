@@ -1,33 +1,41 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Box, IconButton, Tooltip } from '@mui/material';
-import { Edit, Visibility, Delete } from '@mui/icons-material';
-import PageHeader from '../components/common/PageHeader';
-import DataTable from '../components/common/DataTable';
-import SearchFilters from '../components/common/SearchFilters';
-import StatusChip from '../components/common/StatusChip';
-import ConfirmDialog from '../components/common/ConfirmDialog';
-import { admissionService, branchService, collegeService } from '../api/services';
-import { useAuth } from '../context/AuthContext';
-import { formatDate, formatCurrency } from '../utils/formatters';
-import { ADMISSION_STATUS_OPTIONS } from '../utils/constants';
-import indiaLocations from '../data/indiaLocations.json';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, IconButton, Tooltip } from "@mui/material";
+import { Edit, Visibility, Delete } from "@mui/icons-material";
+import PageHeader from "../components/common/PageHeader";
+import DataTable from "../components/common/DataTable";
+import SearchFilters from "../components/common/SearchFilters";
+import StatusChip from "../components/common/StatusChip";
+import ConfirmDialog from "../components/common/ConfirmDialog";
+import {
+  admissionService,
+  branchService,
+  collegeService,
+} from "../api/services";
+import { useAuth } from "../context/AuthContext";
+import { formatDate, formatCurrency } from "../utils/formatters";
+import { ADMISSION_STATUS_OPTIONS } from "../utils/constants";
+import indiaLocations from "../data/indiaLocations.json";
 
 const AdmissionsPage = () => {
   const navigate = useNavigate();
   const { isStaff } = useAuth();
   const [admissions, setAdmissions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
   const [branches, setBranches] = useState([]);
   const [colleges, setColleges] = useState([]);
   const [filters, setFilters] = useState({
-    search: '',
-    branchId: '',
-    collegeId: '',
-    admissionStatus: '',
-    state: '',
-    district: '',
+    search: "",
+    branchId: "",
+    collegeId: "",
+    admissionStatus: "",
+    state: "",
+    district: "",
     startDate: null,
     endDate: null,
   });
@@ -47,7 +55,7 @@ const AdmissionsPage = () => {
       const response = await branchService.getActive();
       setBranches(response.data.data);
     } catch (error) {
-      console.error('Failed to fetch branches:', error);
+      console.error("Failed to fetch branches:", error);
     }
   };
 
@@ -56,7 +64,7 @@ const AdmissionsPage = () => {
       const response = await collegeService.getActive();
       setColleges(response.data.data);
     } catch (error) {
-      console.error('Failed to fetch colleges:', error);
+      console.error("Failed to fetch colleges:", error);
     }
   };
 
@@ -83,7 +91,7 @@ const AdmissionsPage = () => {
         total: response.data.pagination.total,
       }));
     } catch (error) {
-      console.error('Failed to fetch admissions:', error);
+      console.error("Failed to fetch admissions:", error);
     } finally {
       setLoading(false);
     }
@@ -100,87 +108,116 @@ const AdmissionsPage = () => {
       setDeleteDialog({ open: false, id: null });
       fetchAdmissions();
     } catch (error) {
-      console.error('Failed to delete admission:', error);
+      console.error("Failed to delete admission:", error);
     }
   };
 
   const columns = [
-    { field: 'admissionNo', headerName: 'Admission No', minWidth: 130 },
+    { field: "admissionNo", headerName: "Admission No", minWidth: 130 },
     {
-      field: 'admissionDate',
-      headerName: 'Date',
+      field: "admissionDate",
+      headerName: "Date",
       minWidth: 100,
       renderCell: (row) => formatDate(row.admissionDate),
     },
     {
-      field: 'student',
-      headerName: 'Student',
+      field: "student",
+      headerName: "Student",
       minWidth: 150,
       renderCell: (row) => `${row.student?.firstName} ${row.student?.lastName}`,
     },
     {
-      field: 'branch',
-      headerName: 'Branch',
+      field: "branch",
+      headerName: "Branch",
       minWidth: 120,
       renderCell: (row) => row.branchId?.name,
     },
     {
-      field: 'college',
-      headerName: 'College',
+      field: "college",
+      headerName: "College",
       minWidth: 150,
       renderCell: (row) => row.collegeId?.name,
     },
     {
-      field: 'course',
-      headerName: 'Course',
+      field: "course",
+      headerName: "Course",
       minWidth: 150,
       renderCell: (row) => row.courseId?.name,
     },
     {
-      field: 'admissionStatus',
-      headerName: 'Status',
+      field: "admissionStatus",
+      headerName: "Status",
       minWidth: 110,
       renderCell: (row) => <StatusChip status={row.admissionStatus} />,
     },
     {
-      field: 'totalFee',
-      headerName: 'Total Fee',
+      field: "totalFee",
+      headerName: "First Year Total Fee",
       minWidth: 120,
-      align: 'right',
+      align: "right",
       renderCell: (row) => formatCurrency(row.fees?.totalFee),
     },
     {
-      field: 'studentDue',
-      headerName: 'Student Due',
+      field: "studentPaid",
+      headerName: "Fee Paid",
       minWidth: 120,
-      align: 'right',
+      align: "right",
+      renderCell: (row) => formatCurrency(row.paymentSummary?.studentPaid),
+    },
+    {
+      field: "studentDue",
+      headerName: "Student Due",
+      minWidth: 120,
+      align: "right",
       renderCell: (row) => formatCurrency(row.paymentSummary?.studentDue),
     },
-    ...(!isStaff ? [{
-      field: 'serviceChargeDue',
-      headerName: 'SC Due',
-      minWidth: 100,
-      align: 'right',
-      renderCell: (row) => formatCurrency(row.serviceCharge?.due),
-    }] : []),
+    ...(!isStaff
+      ? [
+          {
+            field: "serviceChargeDue",
+            headerName: "SC Due",
+            minWidth: 100,
+            align: "right",
+            renderCell: (row) => formatCurrency(row.serviceCharge?.due),
+          },
+        ]
+      : []),
     {
-      field: 'actions',
-      headerName: 'Actions',
+      field: "actions",
+      headerName: "Actions",
       minWidth: 120,
       renderCell: (row) => (
         <Box>
           <Tooltip title="View">
-            <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/admissions/${row._id}`); }}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/admissions/${row._id}`);
+              }}
+            >
               <Visibility fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Edit">
-            <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/admissions/${row._id}/edit`); }}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/admissions/${row._id}/edit`);
+              }}
+            >
               <Edit fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete">
-            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteDialog({ open: true, id: row._id }); }}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteDialog({ open: true, id: row._id });
+              }}
+            >
               <Delete fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -191,17 +228,40 @@ const AdmissionsPage = () => {
 
   const handleFilterChange = (newFilters) => {
     if (newFilters.state !== filters.state) {
-      newFilters.district = '';
+      newFilters.district = "";
     }
     setFilters(newFilters);
   };
 
   const filterConfig = [
-    { field: 'branchId', label: 'Branch', options: branches.map(b => ({ value: b._id, label: b.name })) },
-    { field: 'collegeId', label: 'College', options: colleges.map(c => ({ value: c._id, label: c.name })) },
-    { field: 'admissionStatus', label: 'Status', options: ADMISSION_STATUS_OPTIONS },
-    { field: 'state', label: 'State', options: indiaLocations.states.map(s => ({ value: s, label: s })) },
-    { field: 'district', label: 'District', options: (indiaLocations.districts[filters.state] || []).map(d => ({ value: d, label: d })) },
+    {
+      field: "branchId",
+      label: "Branch",
+      options: branches.map((b) => ({ value: b._id, label: b.name })),
+    },
+    {
+      field: "collegeId",
+      label: "College",
+      options: colleges.map((c) => ({ value: c._id, label: c.name })),
+    },
+    {
+      field: "admissionStatus",
+      label: "Status",
+      options: ADMISSION_STATUS_OPTIONS,
+    },
+    {
+      field: "state",
+      label: "State",
+      options: indiaLocations.states.map((s) => ({ value: s, label: s })),
+    },
+    {
+      field: "district",
+      label: "District",
+      options: (indiaLocations.districts[filters.state] || []).map((d) => ({
+        value: d,
+        label: d,
+      })),
+    },
   ];
 
   return (
@@ -210,7 +270,7 @@ const AdmissionsPage = () => {
         title="Admissions"
         subtitle="Manage student admissions"
         actionLabel="New Admission"
-        onActionClick={() => navigate('/admissions/new')}
+        onActionClick={() => navigate("/admissions/new")}
       />
 
       <SearchFilters
@@ -219,7 +279,18 @@ const AdmissionsPage = () => {
         values={filters}
         onChange={handleFilterChange}
         onSearch={handleSearch}
-        onClear={() => setFilters({ search: '', branchId: '', collegeId: '', admissionStatus: '', state: '', district: '', startDate: null, endDate: null })}
+        onClear={() =>
+          setFilters({
+            search: "",
+            branchId: "",
+            collegeId: "",
+            admissionStatus: "",
+            state: "",
+            district: "",
+            startDate: null,
+            endDate: null,
+          })
+        }
         showDateRange
       />
 
@@ -229,7 +300,9 @@ const AdmissionsPage = () => {
         loading={loading}
         pagination={pagination}
         onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-        onRowsPerPageChange={(limit) => setPagination((prev) => ({ ...prev, limit, page: 1 }))}
+        onRowsPerPageChange={(limit) =>
+          setPagination((prev) => ({ ...prev, limit, page: 1 }))
+        }
         onRowClick={(row) => navigate(`/admissions/${row._id}`)}
       />
 

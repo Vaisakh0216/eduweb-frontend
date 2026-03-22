@@ -126,16 +126,18 @@ const DashboardPage = () => {
         title="Dashboard"
         subtitle={`Welcome back, ${user?.firstName}!`}
       >
-        {isStaff && user?.branches?.length > 0 && user.branches.map(b => (
-          <Chip
-            key={b._id}
-            icon={<LocationOn fontSize="small" />}
-            label={b.name}
-            size="small"
-            color="primary"
-            variant="outlined"
-          />
-        ))}
+        {isStaff &&
+          user?.branches?.length > 0 &&
+          user.branches.map((b) => (
+            <Chip
+              key={b._id}
+              icon={<LocationOn fontSize="small" />}
+              label={b.name}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
+          ))}
       </PageHeader>
 
       {/* Filters */}
@@ -188,50 +190,192 @@ const DashboardPage = () => {
 
       {/* Financial Stats - hidden for staff */}
       {!isStaff && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={2.4}>
-            <StatCard
-              title="Total Income"
-              value={formatCurrency(stats?.financial?.totalIncome || 0)}
-              icon={<TrendingUp />}
-              color="success"
-            />
+        <>
+          {/* Business Profit */}
+          <Box sx={{ mb: 1 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+            >
+              Business Profit
+            </Typography>
+          </Box>
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Service Revenue"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.serviceRevenue || 0
+                )}
+                icon={<TrendingUp />}
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Operating Expenses"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.operatingExpenses || 0
+                )}
+                icon={<TrendingDown />}
+                color="error"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Net Profit"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.netProfit || 0
+                )}
+                icon={<AccountBalance />}
+                color={
+                  (stats?.financial?.businessProfit?.netProfit || 0) >= 0
+                    ? "primary"
+                    : "error"
+                }
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
-            <StatCard
-              title="Total Expense"
-              value={formatCurrency(stats?.financial?.totalExpense || 0)}
-              icon={<TrendingDown />}
-              color="error"
-            />
+
+          {/* Fee Management */}
+          <Box sx={{ mb: 1 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+            >
+              Fee Management
+            </Typography>
+          </Box>
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Fee Income"
+                value={formatCurrency(
+                  stats?.financial?.feeManagement?.feeIncome || 0
+                )}
+                icon={<TrendingUp />}
+                color="info"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Fee Paid to College"
+                value={formatCurrency(
+                  stats?.financial?.feeManagement?.feePaidToCollege || 0
+                )}
+                icon={<TrendingDown />}
+                color="warning"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Balance Payable to College"
+                value={formatCurrency(
+                  stats?.financial?.feeManagement?.balancePayableToCollege || 0
+                )}
+                icon={<AccountBalance />}
+                color={
+                  (stats?.financial?.feeManagement?.balancePayableToCollege ||
+                    0) <= 0
+                    ? "success"
+                    : "error"
+                }
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
-            <StatCard
-              title="Net Profit"
-              value={formatCurrency(stats?.financial?.netProfit || 0)}
-              icon={<AccountBalance />}
-              color={
-                (stats?.financial?.netProfit || 0) >= 0 ? "primary" : "error"
-              }
-            />
+
+          {/* Service Revenue & Consultant Commission */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6}>
+              <Card>
+                <CardContent>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight="bold"
+                    sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 1.5 }}
+                  >
+                    Service Revenue
+                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary">Total</Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      {formatCurrency(stats?.serviceRevenue?.total || 0)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                    <Typography variant="body2" color="success.main">Received</Typography>
+                    <Typography variant="body2" fontWeight="bold" color="success.main">
+                      {formatCurrency(stats?.serviceRevenue?.received || 0)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2" color="error.main">Pending</Typography>
+                    <Typography variant="body2" fontWeight="bold" color="error.main">
+                      {formatCurrency(stats?.serviceRevenue?.pending || 0)}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Card>
+                <CardContent>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight="bold"
+                    sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 1.5 }}
+                  >
+                    Consultant Commission
+                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary">Total</Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      {formatCurrency(stats?.consultantCommission?.total || 0)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                    <Typography variant="body2" color="success.main">Paid to Consultants</Typography>
+                    <Typography variant="body2" fontWeight="bold" color="success.main">
+                      {formatCurrency(stats?.consultantCommission?.paid || 0)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                    <Typography variant="body2" color="error.main">Consultant Payable</Typography>
+                    <Typography variant="body2" fontWeight="bold" color="error.main">
+                      {formatCurrency(stats?.consultantCommission?.payable || 0)}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
-            <StatCard
-              title="Cash in Hand"
-              value={formatCurrency(stats?.cashInHand || 0)}
-              icon={<Payment />}
-              color="info"
-            />
+
+          {/* Cash positions */}
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6}>
+              <StatCard
+                title="Cash in Hand"
+                value={formatCurrency(stats?.cashInHand || 0)}
+                icon={<Payment />}
+                color="info"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <StatCard
+                title="Cash in Bank"
+                value={formatCurrency(stats?.cashInBank || 0)}
+                icon={<AccountBalance />}
+                color="secondary"
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.4}>
-            <StatCard
-              title="Cash in Bank"
-              value={formatCurrency(stats?.cashInBank || 0)}
-              icon={<AccountBalance />}
-              color="secondary"
-            />
-          </Grid>
-        </Grid>
+        </>
       )}
 
       {/* Admission Stats */}
@@ -386,7 +530,7 @@ const DashboardPage = () => {
                         `${name} ${(percent * 100).toFixed(0)}%`
                       }
                     >
-                      {admissionPieData.map((entry, index) => (
+                      {admissionPieData.map((_entry, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
