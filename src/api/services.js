@@ -139,6 +139,7 @@ export const cashbookService = {
 // Dashboard
 export const dashboardService = {
   getStats: (params) => api.get('/dashboard/stats', { params }),
+  getAcademicYears: () => api.get('/dashboard/academic-years'),
   getMonthlyTrend: (params) => api.get('/dashboard/monthly-trend', { params }),
   getAdmissionTrend: (params) => api.get('/dashboard/admission-trend', { params }),
   getPaymentTrend: (params) => api.get('/dashboard/payment-trend', { params }),

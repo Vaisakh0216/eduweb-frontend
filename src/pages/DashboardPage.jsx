@@ -54,15 +54,18 @@ const DashboardPage = () => {
   const [monthlyTrend, setMonthlyTrend] = useState([]);
   const [admissionTrend, setAdmissionTrend] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
   const [filters, setFilters] = useState({
     branchId: isStaff && user?.branches?.length > 0 ? user.branches[0]._id : "",
     startDate: null,
     endDate: null,
     year: new Date().getFullYear(),
+    academicYear: "",
   });
 
   useEffect(() => {
     fetchBranches();
+    fetchAcademicYears();
   }, []);
 
   useEffect(() => {
@@ -78,6 +81,15 @@ const DashboardPage = () => {
     }
   };
 
+  const fetchAcademicYears = async () => {
+    try {
+      const response = await dashboardService.getAcademicYears();
+      setAcademicYears(response.data.data);
+    } catch (error) {
+      console.error("Failed to fetch academic years:", error);
+    }
+  };
+
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
@@ -86,6 +98,7 @@ const DashboardPage = () => {
         startDate: filters.startDate?.toISOString(),
         endDate: filters.endDate?.toISOString(),
         year: filters.year,
+        academicYear: filters.academicYear || undefined,
       };
 
       const [statsRes, monthlyRes, admissionRes] = await Promise.all([
@@ -170,6 +183,23 @@ const DashboardPage = () => {
                 </Select>
               </FormControl>
             )}
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>Academic Year</InputLabel>
+              <Select
+                value={filters.academicYear}
+                onChange={(e) =>
+                  setFilters({ ...filters, academicYear: e.target.value })
+                }
+                label="Academic Year"
+              >
+                <MenuItem value="">All Years</MenuItem>
+                {academicYears.map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <DatePicker
               label="Start Date"
               value={filters.startDate}
