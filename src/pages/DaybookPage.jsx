@@ -699,6 +699,7 @@ import {
   Close,
   DeleteSweep,
   Warning,
+  AccountBalance,
 } from "@mui/icons-material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import PageHeader from "../components/common/PageHeader";
@@ -777,6 +778,11 @@ const DaybookPage = () => {
   const [clearLoading, setClearLoading] = useState(false);
   const [clearError, setClearError] = useState("");
   const [clearSuccess, setClearSuccess] = useState("");
+  const [obDialogOpen, setObDialogOpen] = useState(false);
+  const [obForm, setObForm] = useState({ branchId: "", amount: "", date: new Date(), description: "" });
+  const [obCurrent, setObCurrent] = useState(null);
+  const [obLoading, setObLoading] = useState(false);
+  const [obError, setObError] = useState("");
 
   useEffect(() => {
     branchService.getActive().then((res) => setBranches(res.data.data));
@@ -801,6 +807,11 @@ const DaybookPage = () => {
         params.startDate = params.startDate.toISOString();
       if (params.endDate instanceof Date)
         params.endDate = params.endDate.toISOString();
+      // Opening Balance is filtered by category, not transactionType
+      if (params.transactionType === "opening_balance") {
+        delete params.transactionType;
+        params.category = "opening_balance";
+      }
       const res = await daybookService.getAll(params);
       setEntries(res.data.data);
       setPagination((prev) => ({ ...prev, total: res.data.pagination.total }));
@@ -945,6 +956,55 @@ const DaybookPage = () => {
     }
   };
 
+  const openObDialog = async () => {
+    const defaultBranch = branches[0]?._id || "";
+    setObForm({ branchId: defaultBranch, amount: "", date: new Date(), description: "" });
+    setObError("");
+    setObCurrent(null);
+    if (defaultBranch) {
+      try {
+        const res = await daybookService.getOpeningBalance(defaultBranch);
+        setObCurrent(res.data.data);
+      } catch {}
+    }
+    setObDialogOpen(true);
+  };
+
+  const handleObBranchChange = async (branchId) => {
+    setObForm((f) => ({ ...f, branchId }));
+    setObCurrent(null);
+    if (branchId) {
+      try {
+        const res = await daybookService.getOpeningBalance(branchId);
+        setObCurrent(res.data.data);
+      } catch {}
+    }
+  };
+
+  const handleObSave = async () => {
+    if (!obForm.branchId || !obForm.amount) {
+      setObError("Branch and amount are required.");
+      return;
+    }
+    setObLoading(true);
+    setObError("");
+    try {
+      await daybookService.setOpeningBalance({
+        branchId: obForm.branchId,
+        amount: parseFloat(obForm.amount),
+        date: obForm.date,
+        description: obForm.description || "Opening Balance",
+      });
+      setObDialogOpen(false);
+      fetchEntries();
+      fetchSummary();
+    } catch (e) {
+      setObError(e.response?.data?.message || "Failed to set opening balance.");
+    } finally {
+      setObLoading(false);
+    }
+  };
+
   const handleExport = async () => {
     try {
       const params = {
@@ -1038,9 +1098,13 @@ const DaybookPage = () => {
     },
     {
       field: "category",
-      headerName: "Category",
-      minWidth: 160,
-      renderCell: (row) => formatCategoryLabel(row.category),
+      headerName: "Type",
+      minWidth: 140,
+      renderCell: (row) => {
+        if (row.category === "opening_balance") return "Opening Balance";
+        const map = { income: "Receipt", expense: "Payment", transfer: "Transfer", asset: "Journal" };
+        return map[row.transactionType] || row.transactionType || "-";
+      },
     },
     { field: "description", headerName: "Description", minWidth: 180 },
     {
@@ -1146,6 +1210,16 @@ const DaybookPage = () => {
         actionLabel={isSuperAdmin || isAdmin ? "Add Entry" : null}
         onActionClick={openAddDialog}
       >
+        {(isSuperAdmin || isAdmin) && (
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<AccountBalance />}
+            onClick={openObDialog}
+          >
+            Opening Balance
+          </Button>
+        )}
         <Button
           variant="outlined"
           startIcon={<Download />}
@@ -1323,7 +1397,7 @@ const DaybookPage = () => {
                   }
                   label="Transaction Type"
                 >
-                  {DAYBOOK_TRANSACTION_TYPES.map((t) => (
+                  {DAYBOOK_TRANSACTION_TYPES.filter((t) => t.value !== "opening_balance").map((t) => (
                     <MenuItem key={t.value} value={t.value}>
                       {t.label}
                     </MenuItem>
@@ -1557,6 +1631,76 @@ const DaybookPage = () => {
         onConfirm={handleDelete}
         onCancel={() => setDeleteDialog({ open: false, id: null })}
       />
+
+      {/* Opening Balance Dialog */}
+      <Dialog open={obDialogOpen} onClose={() => setObDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Set Opening Balance</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid item xs={12}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Branch</InputLabel>
+                <Select
+                  value={obForm.branchId}
+                  onChange={(e) => handleObBranchChange(e.target.value)}
+                  label="Branch"
+                >
+                  {branches.map((b) => (
+                    <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            {obCurrent && (
+              <Grid item xs={12}>
+                <Alert severity="info" sx={{ py: 0.5 }}>
+                  Current opening balance: <strong>{formatCurrency(obCurrent.amount)}</strong>
+                  {" "}(set on {formatDate(obCurrent.date)}). Saving will replace it.
+                </Alert>
+              </Grid>
+            )}
+            <Grid item xs={12}>
+              <DatePicker
+                label="As of Date"
+                value={obForm.date}
+                onChange={(d) => setObForm((f) => ({ ...f, date: d }))}
+                slotProps={{ textField: { fullWidth: true, size: "small" } }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Opening Balance Amount"
+                type="number"
+                fullWidth
+                size="small"
+                value={obForm.amount}
+                onChange={(e) => setObForm((f) => ({ ...f, amount: e.target.value }))}
+                inputProps={{ min: 0 }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Description (optional)"
+                fullWidth
+                size="small"
+                value={obForm.description}
+                onChange={(e) => setObForm((f) => ({ ...f, description: e.target.value }))}
+              />
+            </Grid>
+            {obError && (
+              <Grid item xs={12}>
+                <Alert severity="error">{obError}</Alert>
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setObDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleObSave} disabled={obLoading}>
+            {obLoading ? "Saving..." : "Save"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Clear Daybook Dialog */}
       <Dialog

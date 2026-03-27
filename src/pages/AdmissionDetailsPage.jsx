@@ -1108,19 +1108,8 @@ const AdmissionDetailsPage = () => {
     }
   };
 
-  const handleOpenDocument = async (documentId, mimeType, originalName) => {
-    try {
-      const response = await admissionService.getDocument(id, documentId);
-      const url = URL.createObjectURL(new Blob([response.data], { type: mimeType }));
-      const a = document.createElement("a");
-      a.href = url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch (error) {
-      alert("Error opening document");
-    }
+  const handleOpenDocument = (documentId) => {
+    window.open(admissionService.getDocumentUrl(id, documentId), "_blank", "noopener,noreferrer");
   };
 
   const docsTabIndex = isStaff ? 1 : 3;
@@ -1757,7 +1746,7 @@ const AdmissionDetailsPage = () => {
                         <Tooltip title="View">
                           <IconButton
                             size="small"
-                            onClick={() => handleOpenDocument(doc._id, doc.mimeType, doc.originalName)}
+                            onClick={() => handleOpenDocument(doc._id)}
                           >
                             <AttachFile fontSize="small" />
                           </IconButton>

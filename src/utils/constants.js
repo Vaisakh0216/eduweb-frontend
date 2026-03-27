@@ -104,10 +104,11 @@ export const DAYBOOK_TYPES = [
 ];
 
 export const DAYBOOK_TRANSACTION_TYPES = [
-  { value: 'income', label: 'Income' },
-  { value: 'expense', label: 'Expense' },
+  { value: 'opening_balance', label: 'Opening Balance' },
+  { value: 'income', label: 'Receipt' },
+  { value: 'expense', label: 'Payment' },
   { value: 'transfer', label: 'Transfer' },
-  { value: 'asset', label: 'Asset' },
+  { value: 'asset', label: 'Journal' },
 ];
 
 export const DAYBOOK_CATEGORIES = [

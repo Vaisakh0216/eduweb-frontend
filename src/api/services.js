@@ -71,7 +71,7 @@ export const admissionService = {
   recalculate: (id) => api.post(`/admissions/${id}/recalculate`),
   uploadDocument: (id, formData) => api.post(`/admissions/${id}/documents`, formData),
   deleteDocument: (id, documentId) => api.delete(`/admissions/${id}/documents/${documentId}`),
-  getDocument: (id, documentId) => api.get(`/admissions/${id}/documents/${documentId}`, { responseType: 'blob' }),
+  getDocumentUrl: (id, documentId) => `${api.defaults.baseURL}/admissions/${id}/documents/${documentId}`,
 };
 
 // Payments
@@ -79,9 +79,7 @@ export const paymentService = {
   getAll: (params) => api.get('/payments', { params }),
   getById: (id) => api.get(`/payments/${id}`),
   create: (data) => api.post('/payments', data),
-  createWithAttachment: (formData) => api.post('/payments', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  createWithAttachment: (formData) => api.post('/payments', formData),
   update: (id, data) => api.put(`/payments/${id}`, data),
   delete: (id) => api.delete(`/payments/${id}`),
   checkTransactionRef: (transactionRef) => api.get('/payments/check-ref', { params: { transactionRef } }),
@@ -115,12 +113,14 @@ export const daybookService = {
   create: (data) => api.post('/daybook', data),
   update: (id, data) => api.put(`/daybook/${id}`, data),
   delete: (id) => api.delete(`/daybook/${id}`),
-  uploadAttachment: (id, formData) => api.post(`/daybook/${id}/attachments`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  uploadAttachment: (id, formData) => api.post(`/daybook/${id}/attachments`, formData),
   removeAttachment: (id, attachmentId) => api.delete(`/daybook/${id}/attachments/${attachmentId}`),
   getAttachment: (id, attachmentId) => `${api.defaults.baseURL}/daybook/${id}/attachments/${attachmentId}`,
   getPettyCash: (params) => api.get('/daybook/petty-cash', { params }),
   clear: (params) => api.delete('/daybook/clear', { params }),
   hardClear: (params) => api.delete('/daybook/hard-clear', { params }),
+  setOpeningBalance: (data) => api.post('/daybook/opening-balance', data),
+  getOpeningBalance: (branchId) => api.get(`/daybook/opening-balance/${branchId}`),
 };
 
 // Cashbook
