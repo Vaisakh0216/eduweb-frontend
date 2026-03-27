@@ -89,7 +89,8 @@ const PettyCashPage = () => {
   // Edit/Delete state
   const [editDialog, setEditDialog] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [editForm, setEditForm] = useState({ amount: 0, date: new Date(), category: '', description: '', transactionRef: '', remarks: '', paidTo: '', paymentMonth: null });
+  const [editForm, setEditForm] = useState({ amount: 0, date: new Date(), category: '', description: '', transactionRef: '', remarks: '', paidTo: '', paymentMonth: null, attachmentFile: null });
+  const [editAttachments, setEditAttachments] = useState([]);
   const [editLoading, setEditLoading] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
 
@@ -279,7 +280,9 @@ const PettyCashPage = () => {
       remarks: row.remarks || '',
       paidTo: row.paidTo || '',
       paymentMonth: row.paymentMonth ? new Date(row.paymentMonth) : null,
+      attachmentFile: null,
     });
+    setEditAttachments(row.attachments || []);
     setEditDialog(true);
   };
 
@@ -296,6 +299,11 @@ const PettyCashPage = () => {
         paidTo: editForm.paidTo || undefined,
         paymentMonth: editForm.paymentMonth instanceof Date ? editForm.paymentMonth.toISOString() : (editForm.paymentMonth || undefined),
       });
+      if (editForm.attachmentFile) {
+        const fd = new FormData();
+        fd.append('file', editForm.attachmentFile);
+        await daybookService.uploadAttachment(editId, fd);
+      }
       setEditDialog(false);
       fetchDashboard(dashBranch);
     } catch (e) {
@@ -808,6 +816,37 @@ const PettyCashPage = () => {
                   value={editForm.remarks}
                   onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
                 />
+              </Grid>
+              <Grid item xs={12}>
+                {editAttachments.length > 0 && (
+                  <Box sx={{ mb: 1 }}>
+                    {editAttachments.map(att => (
+                      <Button
+                        key={att._id}
+                        size="small"
+                        variant="text"
+                        sx={{ mr: 1 }}
+                        onClick={() => window.open(daybookService.getAttachment(editId, att._id), '_blank')}
+                      >
+                        View Attachment
+                      </Button>
+                    ))}
+                  </Box>
+                )}
+                <Button variant="outlined" component="label" size="small">
+                  {editForm.attachmentFile ? editForm.attachmentFile.name : 'Attach Receipt / Bill'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*,.pdf"
+                    onChange={(e) => setEditForm({ ...editForm, attachmentFile: e.target.files[0] || null })}
+                  />
+                </Button>
+                {editForm.attachmentFile && (
+                  <Button size="small" color="error" sx={{ ml: 1 }} onClick={() => setEditForm({ ...editForm, attachmentFile: null })}>
+                    Remove
+                  </Button>
+                )}
               </Grid>
             </Grid>
           </DialogContent>
