@@ -1532,8 +1532,8 @@ const AdmissionDetailsPage = () => {
                     <TableCell>Reference</TableCell>
                     <TableCell>Voucher</TableCell>
                     <TableCell align="right">Amount</TableCell>
-                    <TableCell align="right">SC Deducted</TableCell>
-                    <TableCell align="right">Agent Fee</TableCell>
+                    {!isStaff && <TableCell align="right">SC Deducted</TableCell>}
+                    {!isStaff && <TableCell align="right">Agent Fee</TableCell>}
                     <TableCell>Attachment</TableCell>
                     {!isStaff && <TableCell>Actions</TableCell>}
                   </TableRow>
@@ -1551,16 +1551,20 @@ const AdmissionDetailsPage = () => {
                       <TableCell align="right">
                         {formatCurrency(p.amount)}
                       </TableCell>
-                      <TableCell align="right">
-                        {p.serviceChargeDeducted
-                          ? formatCurrency(p.serviceChargeDeducted)
-                          : "-"}
-                      </TableCell>
-                      <TableCell align="right">
-                        {p.agentFeeDeducted
-                          ? formatCurrency(p.agentFeeDeducted)
-                          : "-"}
-                      </TableCell>
+                      {!isStaff && (
+                        <TableCell align="right">
+                          {p.serviceChargeDeducted
+                            ? formatCurrency(p.serviceChargeDeducted)
+                            : "-"}
+                        </TableCell>
+                      )}
+                      {!isStaff && (
+                        <TableCell align="right">
+                          {p.agentFeeDeducted
+                            ? formatCurrency(p.agentFeeDeducted)
+                            : "-"}
+                        </TableCell>
+                      )}
                       <TableCell>
                         {p.attachment?.filename ? (
                           <Button
@@ -2218,7 +2222,7 @@ const AdmissionDetailsPage = () => {
             </Grid>
 
             {/* Service Charge section — shown only when this payment has SC involvement */}
-            {(editPaymentForm.isServiceChargePayment || editPaymentForm.serviceChargeDeducted > 0) && (
+            {!isStaff && (editPaymentForm.isServiceChargePayment || editPaymentForm.serviceChargeDeducted > 0) && (
               <>
                 <Grid item xs={12}>
                   <Box sx={{ p: 1.5, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200', borderRadius: 1 }}>
@@ -2267,7 +2271,7 @@ const AdmissionDetailsPage = () => {
             )}
 
             {/* Agent Fee section */}
-            {editPaymentForm.agentFeeDeducted > 0 && (
+            {!isStaff && editPaymentForm.agentFeeDeducted > 0 && (
               <Grid item xs={6}>
                 <TextField
                   fullWidth
