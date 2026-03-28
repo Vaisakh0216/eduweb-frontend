@@ -1399,7 +1399,7 @@ const AdmissionDetailsPage = () => {
                       <div>
                         <span>Paid:</span>
                         <Typography color="success.main">
-                          {formatCurrency(admission.agents.mainAgent.paid || 0)}
+                          {formatCurrency(admission.agents.mainAgent.feePaid || 0)}
                         </Typography>
                       </div>
                       <div>
@@ -1407,7 +1407,7 @@ const AdmissionDetailsPage = () => {
                         <Typography color="error.main">
                           {formatCurrency(
                             (admission.agents.mainAgent.agentFee || 0) -
-                              (admission.agents.mainAgent.paid || 0)
+                              (admission.agents.mainAgent.feePaid || 0)
                           )}
                         </Typography>
                       </div>
@@ -1433,7 +1433,7 @@ const AdmissionDetailsPage = () => {
                         <span>Paid:</span>
                         <Typography color="success.main">
                           {formatCurrency(
-                            admission.agents.collegeAgent.paid || 0
+                            admission.agents.collegeAgent.feePaid || 0
                           )}
                         </Typography>
                       </div>
@@ -1442,7 +1442,7 @@ const AdmissionDetailsPage = () => {
                         <Typography color="error.main">
                           {formatCurrency(
                             (admission.agents.collegeAgent.agentFee || 0) -
-                              (admission.agents.collegeAgent.paid || 0)
+                              (admission.agents.collegeAgent.feePaid || 0)
                           )}
                         </Typography>
                       </div>
@@ -1465,7 +1465,7 @@ const AdmissionDetailsPage = () => {
                       <div>
                         <span>Paid:</span>
                         <Typography color="success.main">
-                          {formatCurrency(admission.agents.subAgent.paid || 0)}
+                          {formatCurrency(admission.agents.subAgent.feePaid || 0)}
                         </Typography>
                       </div>
                       <div>
@@ -1473,7 +1473,7 @@ const AdmissionDetailsPage = () => {
                         <Typography color="error.main">
                           {formatCurrency(
                             (admission.agents.subAgent.agentFee || 0) -
-                              (admission.agents.subAgent.paid || 0)
+                              (admission.agents.subAgent.feePaid || 0)
                           )}
                         </Typography>
                       </div>
