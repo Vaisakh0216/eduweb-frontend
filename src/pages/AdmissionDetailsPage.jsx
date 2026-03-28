@@ -871,6 +871,10 @@ const AdmissionDetailsPage = () => {
     setSubmitting(true);
 
     try {
+      const isStudentToCollege =
+        paymentForm.payerType === "Student" &&
+        paymentForm.receiverType === "College";
+
       const paymentData = {
         admissionId: id,
         branchId: data.admission.branchId._id,
@@ -878,8 +882,10 @@ const AdmissionDetailsPage = () => {
         receiverType: paymentForm.receiverType,
         paymentDate: paymentForm.paymentDate,
         amount: parseFloat(paymentForm.amount),
-        paymentMode: paymentForm.paymentMode,
-        account: paymentForm.account || "Cash",
+        ...(isStudentToCollege ? {} : {
+          paymentMode: paymentForm.paymentMode,
+          account: paymentForm.account || "Cash",
+        }),
         transactionRef: paymentForm.transactionRef,
         notes: paymentForm.notes,
         isServiceChargePayment: paymentForm.isServiceChargePayment,
@@ -1891,43 +1897,47 @@ const AdmissionDetailsPage = () => {
                 }
               />
             </Grid>
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel>Payment Mode</InputLabel>
-                <Select
-                  value={paymentForm.paymentMode}
-                  onChange={(e) =>
-                    setPaymentForm({
-                      ...paymentForm,
-                      paymentMode: e.target.value,
-                    })
-                  }
-                  label="Payment Mode"
-                >
-                  {PAYMENT_MODES.map((m) => (
-                    <MenuItem key={m.value} value={m.value}>
-                      {m.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel>Account</InputLabel>
-                <Select
-                  value={paymentForm.account || "Cash"}
-                  onChange={(e) =>
-                    setPaymentForm({ ...paymentForm, account: e.target.value })
-                  }
-                  label="Account"
-                >
-                  {DAYBOOK_ACCOUNTS.map((a) => (
-                    <MenuItem key={a.value} value={a.value}>{a.label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+            {!(paymentForm.payerType === "Student" && paymentForm.receiverType === "College") && (
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Payment Mode</InputLabel>
+                  <Select
+                    value={paymentForm.paymentMode}
+                    onChange={(e) =>
+                      setPaymentForm({
+                        ...paymentForm,
+                        paymentMode: e.target.value,
+                      })
+                    }
+                    label="Payment Mode"
+                  >
+                    {PAYMENT_MODES.map((m) => (
+                      <MenuItem key={m.value} value={m.value}>
+                        {m.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+            {!(paymentForm.payerType === "Student" && paymentForm.receiverType === "College") && (
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Account</InputLabel>
+                  <Select
+                    value={paymentForm.account || "Cash"}
+                    onChange={(e) =>
+                      setPaymentForm({ ...paymentForm, account: e.target.value })
+                    }
+                    label="Account"
+                  >
+                    {DAYBOOK_ACCOUNTS.map((a) => (
+                      <MenuItem key={a.value} value={a.value}>{a.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
             <Grid item xs={6}>
               <TextField
                 fullWidth
