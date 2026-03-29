@@ -136,6 +136,15 @@ export const cashbookService = {
   hardClear: (params) => api.delete('/cashbook/hard-clear', { params }),
 };
 
+// Journals
+export const journalService = {
+  getAll: (params) => api.get('/journals', { params }),
+  getByAdmission: (admissionId) => api.get(`/journals/admission/${admissionId}`),
+  create: (data) => api.post('/journals', data),
+  settle: (id) => api.patch(`/journals/${id}/settle`),
+  delete: (id) => api.delete(`/journals/${id}`),
+};
+
 // Dashboard
 export const dashboardService = {
   getStats: (params) => api.get('/dashboard/stats', { params }),

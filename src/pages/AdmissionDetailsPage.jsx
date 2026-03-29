@@ -769,10 +769,11 @@ import {
   agentPaymentService,
   branchService,
   agentService,
+  journalService,
 } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency, formatDate } from "../utils/formatters";
-import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES, DAYBOOK_ACCOUNTS } from "../utils/constants";
+import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES, DAYBOOK_ACCOUNTS, JOURNAL_TYPES } from "../utils/constants";
 
 const AdmissionDetailsPage = () => {
   const { id } = useParams();
@@ -803,6 +804,10 @@ const AdmissionDetailsPage = () => {
   const [docFile, setDocFile] = useState(null);
   const [docLabel, setDocLabel] = useState("");
   const [docUploading, setDocUploading] = useState(false);
+  const [journals, setJournals] = useState([]);
+  const [journalDialog, setJournalDialog] = useState(false);
+  const [journalForm, setJournalForm] = useState({ type: "general", agentId: "", amount: 0, journalDate: new Date(), description: "" });
+  const [journalSubmitting, setJournalSubmitting] = useState(false);
 
   function getInitialPaymentForm() {
     return {
@@ -847,6 +852,57 @@ const AdmissionDetailsPage = () => {
       console.error("Error fetching admission details:", error);
     } finally {
       setLoading(false);
+    }
+    // Fetch journals separately so a failure doesn't break the page
+    try {
+      const journalsRes = await journalService.getByAdmission(id);
+      setJournals(journalsRes.data.data || []);
+    } catch (error) {
+      console.error("Error fetching journals:", error);
+    }
+  };
+
+  const handleAddJournal = async () => {
+    setJournalSubmitting(true);
+    try {
+      const admission = data?.admission;
+      const needsAgent = ["sc_collected_by_agent", "agent_balance_adjustment"].includes(journalForm.type);
+      await journalService.create({
+        admissionId: id,
+        branchId: admission?.branchId?._id || admission?.branchId,
+        type: journalForm.type,
+        ...(needsAgent && journalForm.agentId ? { agentId: journalForm.agentId } : {}),
+        amount: parseFloat(journalForm.amount),
+        journalDate: journalForm.journalDate,
+        description: journalForm.description,
+      });
+      setJournalDialog(false);
+      setJournalForm({ type: "general", agentId: "", amount: 0, journalDate: new Date(), description: "" });
+      fetchAdmissionDetails();
+    } catch (e) {
+      alert(e.response?.data?.message || "Error creating journal entry");
+    } finally {
+      setJournalSubmitting(false);
+    }
+  };
+
+  const handleSettleJournal = async (journalId) => {
+    if (!window.confirm("Mark this SC as settled (agent has remitted to consultancy)?")) return;
+    try {
+      await journalService.settle(journalId);
+      fetchAdmissionDetails();
+    } catch (e) {
+      alert(e.response?.data?.message || "Error settling journal");
+    }
+  };
+
+  const handleDeleteJournal = async (journalId) => {
+    if (!window.confirm("Delete this journal entry?")) return;
+    try {
+      await journalService.delete(journalId);
+      fetchAdmissionDetails();
+    } catch (e) {
+      alert(e.response?.data?.message || "Error deleting journal");
     }
   };
 
@@ -1118,7 +1174,8 @@ const AdmissionDetailsPage = () => {
     window.open(admissionService.getDocumentUrl(id, documentId), "_blank", "noopener,noreferrer");
   };
 
-  const docsTabIndex = isStaff ? 1 : 3;
+  const docsTabIndex = isStaff ? 1 : 4;
+  const journalsTabIndex = 3;
 
   const handleRecalculate = async () => {
     try {
@@ -1512,6 +1569,7 @@ const AdmissionDetailsPage = () => {
           <Tab label="Payments" />
           {!isStaff && <Tab label="Agent Payments" />}
           {!isStaff && <Tab label="Vouchers" />}
+          {!isStaff && <Tab label="Journals" />}
           <Tab label="Documents" />
         </Tabs>
 
@@ -1723,6 +1781,84 @@ const AdmissionDetailsPage = () => {
             </TableContainer>
           </Box>
         )}
+        {activeTab === journalsTabIndex && (
+          <Box sx={{ p: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+              <Button variant="contained" startIcon={<Add />} onClick={() => setJournalDialog(true)}>
+                Add Journal Entry
+              </Button>
+            </Box>
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Journal No</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Agent</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell align="right">Amount</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {journals.map((j) => {
+                    const categoryLabel = JOURNAL_TYPES.find((t) => t.value === j.type)?.label || j.type;
+                    const isPending = j.status === "pending";
+                    return (
+                      <TableRow key={j._id}>
+                        <TableCell>{j.journalNo}</TableCell>
+                        <TableCell>{formatDate(j.journalDate)}</TableCell>
+                        <TableCell><Chip label="Journal" size="small" variant="outlined" /></TableCell>
+                        <TableCell>{categoryLabel}</TableCell>
+                        <TableCell>{j.agentId?.name || "-"}</TableCell>
+                        <TableCell>{j.description}</TableCell>
+                        <TableCell align="right">{formatCurrency(j.amount)}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={j.status === "settled" ? "Settled" : j.status === "pending" ? "Pending" : "Completed"}
+                            size="small"
+                            color={j.status === "settled" ? "success" : j.status === "pending" ? "warning" : "default"}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {isPending && (
+                            <Tooltip title="Mark as Settled">
+                              <IconButton size="small" color="success" onClick={() => handleSettleJournal(j._id)}>
+                                <Add fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Delete">
+                            <IconButton size="small" color="error" onClick={() => handleDeleteJournal(j._id)}>
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {journals.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} align="center">No journal entries found</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {journals.filter((j) => j.status === "pending").length > 0 && (
+              <Box sx={{ mt: 2, p: 1.5, bgcolor: "warning.lighter", borderRadius: 1, border: "1px solid", borderColor: "warning.main" }}>
+                <Typography variant="body2" color="warning.dark">
+                  <strong>SC Payable by Agent: </strong>
+                  {formatCurrency(journals.filter((j) => j.status === "pending").reduce((s, j) => s + j.amount, 0))}
+                  {" — Agent collected this SC from the student and needs to remit it to consultancy."}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
         {activeTab === docsTabIndex && (
           <Box sx={{ p: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
@@ -1819,6 +1955,85 @@ const AdmissionDetailsPage = () => {
             startIcon={docUploading ? <CircularProgress size={16} color="inherit" /> : null}
           >
             {docUploading ? "Uploading..." : "Upload"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Journal Entry Dialog */}
+      <Dialog open={journalDialog} onClose={() => setJournalDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add Journal Entry</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <FormControl fullWidth required>
+                <InputLabel>Type</InputLabel>
+                <Select
+                  value={journalForm.type}
+                  onChange={(e) => setJournalForm({ ...journalForm, type: e.target.value, agentId: "" })}
+                  label="Type"
+                >
+                  {JOURNAL_TYPES.map((t) => (
+                    <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            {JOURNAL_TYPES.find((t) => t.value === journalForm.type)?.needsAgent && (
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Agent</InputLabel>
+                  <Select
+                    value={journalForm.agentId}
+                    onChange={(e) => setJournalForm({ ...journalForm, agentId: e.target.value })}
+                    label="Agent"
+                  >
+                    <MenuItem value="">— None —</MenuItem>
+                    {agents.map((a) => (
+                      <MenuItem key={a._id} value={a._id}>{a.name} ({a.agentType})</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Amount"
+                type="number"
+                value={journalForm.amount}
+                onChange={(e) => setJournalForm({ ...journalForm, amount: e.target.value })}
+                inputProps={{ min: 0 }}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <DatePicker
+                label="Date"
+                value={journalForm.journalDate}
+                onChange={(v) => setJournalForm({ ...journalForm, journalDate: v })}
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                required
+                label="Description"
+                placeholder="Explain the purpose of this adjustment"
+                value={journalForm.description}
+                onChange={(e) => setJournalForm({ ...journalForm, description: e.target.value })}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setJournalDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAddJournal}
+            disabled={!journalForm.amount || !journalForm.description || journalSubmitting}
+            startIcon={journalSubmitting ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {journalSubmitting ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -117,7 +117,7 @@ const AgentDetailsPage = () => {
     );
   if (!data) return null;
 
-  const { agent, admissions, payments, totals } = data;
+  const { agent, admissions, payments, totals, pendingJournals = [], scPayableToConsultancy = 0 } = data;
 
   return (
     <Box>
@@ -250,6 +250,18 @@ const AgentDetailsPage = () => {
                 </CardContent>
               </Card>
             </Grid>
+            {scPayableToConsultancy > 0 && (
+              <Grid item xs={12}>
+                <Card sx={{ border: "1px solid", borderColor: "warning.main", bgcolor: "warning.lighter" }}>
+                  <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                    <Typography variant="body2" color="warning.dark">
+                      <strong>SC Payable to Consultancy: {formatCurrency(scPayableToConsultancy)}</strong>
+                      {" — Agent has collected service charge from student(s) and needs to remit it."}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
           </Grid>
         </Grid>
 
@@ -366,6 +378,47 @@ const AgentDetailsPage = () => {
               </TableContainer>
             </CardContent>
           </Card>
+        {pendingJournals.length > 0 && (
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom color="warning.dark">
+                  SC Collected from Students — Pending Remittance
+                </Typography>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Journal No</TableCell>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Admission</TableCell>
+                        <TableCell>Student</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell align="right">SC Amount</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {pendingJournals.map((j) => (
+                        <TableRow key={j._id}>
+                          <TableCell>{j.journalNo}</TableCell>
+                          <TableCell>{formatDate(j.journalDate)}</TableCell>
+                          <TableCell>{j.admissionId?.admissionNo}</TableCell>
+                          <TableCell>
+                            {j.admissionId?.student?.firstName} {j.admissionId?.student?.lastName}
+                          </TableCell>
+                          <TableCell>{j.description || "-"}</TableCell>
+                          <TableCell align="right" sx={{ color: "warning.dark", fontWeight: 600 }}>
+                            {formatCurrency(j.amount)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
         </Grid>
       </Grid>
 

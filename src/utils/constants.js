@@ -187,6 +187,14 @@ export const DAYBOOK_EXPENSE_CATEGORY_GROUPS = [
   },
 ];
 
+export const JOURNAL_TYPES = [
+  { value: 'sc_collected_by_agent', label: 'SC Collected by Agent', needsAgent: true, hasPendingStatus: true },
+  { value: 'sc_adjustment', label: 'Service Charge Adjustment', needsAgent: false, hasPendingStatus: false },
+  { value: 'fee_adjustment', label: 'Fee Adjustment', needsAgent: false, hasPendingStatus: false },
+  { value: 'agent_balance_adjustment', label: 'Agent Balance Adjustment', needsAgent: true, hasPendingStatus: false },
+  { value: 'general', label: 'General Adjustment', needsAgent: false, hasPendingStatus: false },
+];
+
 export const STATUS_COLORS = {
   Confirmed: 'success',
   Pending: 'warning',
