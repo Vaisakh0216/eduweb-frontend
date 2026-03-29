@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
+  Collapse,
   Drawer,
   List,
   ListItem,
@@ -8,7 +10,6 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-  Divider,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -18,7 +19,6 @@ import {
   Business as BusinessIcon,
   School as SchoolIcon,
   MenuBook as MenuBookIcon,
-  PersonAdd as PersonAddIcon,
   Assignment as AssignmentIcon,
   Payment as PaymentIcon,
   Receipt as ReceiptIcon,
@@ -27,6 +27,13 @@ import {
   ReceiptLong as VoucherIcon,
   SupportAgent as AgentIcon,
   Wallet as WalletIcon,
+  ExpandLess,
+  ExpandMore,
+  SpaceDashboard as OverviewIcon,
+  WorkOutline as OperationsIcon,
+  LibraryBooks as MastersIcon,
+  AccountBalanceWallet as AccountsIcon,
+  AdminPanelSettings as AdminIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import Logo from "../../assets/Logo.png";
@@ -38,73 +45,98 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
   const navigate = useNavigate();
   const { user, isSuperAdmin, isAdmin, isStaff } = useAuth();
 
-  const menuItems = [
+  const groups = [
     {
-      text: "Dashboard",
-      icon: <DashboardIcon />,
-      path: "/dashboard",
-      superAdminOnly: true,
-    },
-    { text: "Admissions", icon: <AssignmentIcon />, path: "/admissions", staffVisible: true },
-    { text: "Payments", icon: <PaymentIcon />, path: "/payments" },
-    {
-      text: "Agent Payments",
-      icon: <ReceiptIcon />,
-      path: "/agent-payments",
-      superAdminOnly: true,
-    },
-    { divider: true },
-    {
-      text: "Agents",
-      icon: <AgentIcon />,
-      path: "/agents",
-      superAdminOnly: true,
+      key: "overview",
+      label: "Overview",
+      icon: <OverviewIcon fontSize="small" />,
+      items: [
+        { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard", superAdminOnly: true },
+      ],
     },
     {
-      text: "Colleges",
-      icon: <SchoolIcon />,
-      path: "/colleges",
-      superAdminOnly: true,
+      key: "operations",
+      label: "Operations",
+      icon: <OperationsIcon fontSize="small" />,
+      items: [
+        { text: "Admissions", icon: <AssignmentIcon />, path: "/admissions", staffVisible: true },
+        { text: "Payments", icon: <PaymentIcon />, path: "/payments" },
+        { text: "Agent Payments", icon: <ReceiptIcon />, path: "/agent-payments", superAdminOnly: true },
+      ],
     },
     {
-      text: "Courses",
-      icon: <MenuBookIcon />,
-      path: "/courses",
+      key: "masters",
+      label: "Masters",
+      icon: <MastersIcon fontSize="small" />,
       superAdminOnly: true,
-    },
-    { divider: true },
-    { text: "Daybook", icon: <BookIcon />, path: "/daybook" },
-    { text: "Cashbook", icon: <AccountBalanceIcon />, path: "/cashbook" },
-    { text: "Petty Cash", icon: <WalletIcon />, path: "/petty-cash", staffVisible: true },
-    { text: "Vouchers", icon: <VoucherIcon />, path: "/vouchers" },
-    { divider: true },
-    {
-      text: "Users",
-      icon: <PeopleIcon />,
-      path: "/users",
-      superAdminOnly: true,
+      items: [
+        { text: "Agents", icon: <AgentIcon />, path: "/agents", superAdminOnly: true },
+        { text: "Colleges", icon: <SchoolIcon />, path: "/colleges", superAdminOnly: true },
+        { text: "Courses", icon: <MenuBookIcon />, path: "/courses", superAdminOnly: true },
+      ],
     },
     {
-      text: "Branches",
-      icon: <BusinessIcon />,
-      path: "/branches",
+      key: "accounts",
+      label: "Accounts",
+      icon: <AccountsIcon fontSize="small" />,
+      items: [
+        { text: "Daybook", icon: <BookIcon />, path: "/daybook" },
+        { text: "Cashbook", icon: <AccountBalanceIcon />, path: "/cashbook" },
+        { text: "Petty Cash", icon: <WalletIcon />, path: "/petty-cash", staffVisible: true },
+        { text: "Vouchers", icon: <VoucherIcon />, path: "/vouchers" },
+      ],
+    },
+    {
+      key: "administration",
+      label: "Administration",
+      icon: <AdminIcon fontSize="small" />,
       superAdminOnly: true,
+      items: [
+        { text: "Users", icon: <PeopleIcon />, path: "/users", superAdminOnly: true },
+        { text: "Branches", icon: <BusinessIcon />, path: "/branches", superAdminOnly: true },
+      ],
     },
   ];
 
-  const filteredMenuItems = menuItems.filter((item) => {
-    if (item.divider) return true;
+  const isItemVisible = (item) => {
     if (item.superAdminOnly && !isSuperAdmin) return false;
     if (item.adminOnly && !isSuperAdmin && !isAdmin) return false;
     if (isStaff && !isSuperAdmin && !isAdmin && !item.staffVisible) return false;
     return true;
-  });
+  };
+
+  const visibleGroups = groups
+    .filter((g) => {
+      if (g.superAdminOnly && !isSuperAdmin) return false;
+      return g.items.some(isItemVisible);
+    })
+    .map((g) => ({ ...g, items: g.items.filter(isItemVisible) }));
+
+  // Determine which group contains the active route
+  const activeGroupKey = visibleGroups.find((g) =>
+    g.items.some(
+      (item) =>
+        location.pathname === item.path ||
+        (item.path !== "/dashboard" && location.pathname.startsWith(item.path))
+    )
+  )?.key;
+
+  const [openGroups, setOpenGroups] = useState({});
+
+  // Auto-expand the group that contains the active route
+  useEffect(() => {
+    if (activeGroupKey) {
+      setOpenGroups((prev) => ({ ...prev, [activeGroupKey]: true }));
+    }
+  }, [activeGroupKey]);
+
+  const toggleGroup = (key) => {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleNavigation = (path) => {
     navigate(path);
-    if (isMobile) {
-      onDrawerToggle();
-    }
+    if (isMobile) onDrawerToggle();
   };
 
   const drawerContent = (
@@ -115,65 +147,106 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
           p: 2,
           display: "flex",
           justifyContent: "center",
-          gap: 1,
           borderBottom: "1px solid",
           borderColor: "divider",
         }}
       >
-        <img src={Logo} width="150px" height="40p" />
+        <img src={Logo} width="150px" height="40px" />
       </Box>
 
       {/* Navigation */}
-      <List sx={{ flex: 1, pt: 1 }}>
-        {filteredMenuItems.map((item, index) => {
-          if (item.divider) {
-            return <Divider key={`divider-${index}`} sx={{ my: 1 }} />;
-          }
-
-          const isActive =
-            location.pathname === item.path ||
-            (item.path !== "/dashboard" &&
-              location.pathname.startsWith(item.path));
+      <List sx={{ flex: 1, pt: 1, overflowY: "auto" }}>
+        {visibleGroups.map((group) => {
+          const isOpen = !!openGroups[group.key];
+          const isGroupActive = group.key === activeGroupKey;
 
           return (
-            <ListItem key={item.text} disablePadding sx={{ px: 1 }}>
-              <ListItemButton
-                onClick={() => handleNavigation(item.path)}
-                sx={{
-                  borderRadius: 2,
-                  mb: 0.5,
-                  backgroundColor: isActive ? "primary.main" : "transparent",
-                  color: isActive ? "white" : "text.primary",
-                  "&:hover": {
-                    backgroundColor: isActive ? "primary.dark" : "action.hover",
-                  },
-                  "& .MuiListItemIcon-root": {
-                    color: isActive ? "white" : "text.secondary",
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{
-                    fontSize: "0.875rem",
-                    fontWeight: isActive ? 600 : 400,
+            <Box key={group.key}>
+              {/* Group header */}
+              <ListItem disablePadding sx={{ px: 1 }}>
+                <ListItemButton
+                  onClick={() => toggleGroup(group.key)}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 0.5,
+                    backgroundColor: isGroupActive && !isOpen ? "primary.50" : "transparent",
+                    "&:hover": { backgroundColor: "action.hover" },
                   }}
-                />
-              </ListItemButton>
-            </ListItem>
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 36,
+                      color: isGroupActive ? "primary.main" : "text.secondary",
+                    }}
+                  >
+                    {group.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={group.label}
+                    primaryTypographyProps={{
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      color: isGroupActive ? "primary.main" : "text.secondary",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  />
+                  {isOpen ? (
+                    <ExpandLess sx={{ fontSize: 18, color: "text.secondary" }} />
+                  ) : (
+                    <ExpandMore sx={{ fontSize: 18, color: "text.secondary" }} />
+                  )}
+                </ListItemButton>
+              </ListItem>
+
+              {/* Sub-items */}
+              <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                <List disablePadding>
+                  {group.items.map((item) => {
+                    const isActive =
+                      location.pathname === item.path ||
+                      (item.path !== "/dashboard" &&
+                        location.pathname.startsWith(item.path));
+
+                    return (
+                      <ListItem key={item.text} disablePadding sx={{ pl: 2, pr: 1 }}>
+                        <ListItemButton
+                          onClick={() => handleNavigation(item.path)}
+                          sx={{
+                            borderRadius: 2,
+                            mb: 0.5,
+                            pl: 1.5,
+                            backgroundColor: isActive ? "primary.main" : "transparent",
+                            color: isActive ? "white" : "text.primary",
+                            "&:hover": {
+                              backgroundColor: isActive ? "primary.dark" : "action.hover",
+                            },
+                            "& .MuiListItemIcon-root": {
+                              color: isActive ? "white" : "text.secondary",
+                            },
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
+                          <ListItemText
+                            primary={item.text}
+                            primaryTypographyProps={{
+                              fontSize: "0.875rem",
+                              fontWeight: isActive ? 600 : 400,
+                            }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </Collapse>
+            </Box>
           );
         })}
       </List>
 
       {/* User info */}
-      <Box
-        sx={{
-          p: 2,
-          borderTop: "1px solid",
-          borderColor: "divider",
-        }}
-      >
+      <Box sx={{ p: 2, borderTop: "1px solid", borderColor: "divider" }}>
         <Typography variant="body2" fontWeight="medium">
           {user?.fullName || `${user?.firstName} ${user?.lastName}`}
         </Typography>
@@ -185,10 +258,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
   );
 
   return (
-    <Box
-      component="nav"
-      sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
-    >
+    <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
       {/* Mobile drawer */}
       <Drawer
         variant="temporary"
@@ -197,10 +267,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, onDrawerToggle }) => {
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": {
-            boxSizing: "border-box",
-            width: drawerWidth,
-          },
+          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
         }}
       >
         {drawerContent}
