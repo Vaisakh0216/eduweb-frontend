@@ -717,6 +717,7 @@ import {
   DAYBOOK_TRANSACTION_TYPES,
   DAYBOOK_EXPENSE_CATEGORY_GROUPS,
   DAYBOOK_ACCOUNTS,
+  DAYBOOK_CATEGORIES,
 } from "../utils/constants";
 
 const MONTHS = [
@@ -1077,6 +1078,30 @@ const DaybookPage = () => {
     return incomeCategories.includes(row.category) ? "income" : "expense";
   };
 
+  // Compute per-row running balances from the visible entries (sorted by date asc)
+  const entriesWithBalances = (() => {
+    let bankBal = 0;
+    let cashBal = 0;
+    return [...entries]
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .map((row) => {
+        const type = getRowType(row);
+        const amt = row.amount || 0;
+        const account = (row.account || "").toLowerCase();
+        if (type === "income") {
+          if (account === "bank") bankBal += amt;
+          else if (account === "cash" || account === "petty cash") cashBal += amt;
+        } else if (type === "expense") {
+          if (account === "bank") bankBal -= amt;
+          else if (account === "cash" || account === "petty cash") cashBal -= amt;
+        }
+        return { ...row, _bankBal: bankBal, _cashBal: cashBal, _totalBal: bankBal + cashBal };
+      });
+  })();
+
+  // Restore original display order after computing balances
+  const balanceMap = Object.fromEntries(entriesWithBalances.map((r) => [r._id, r]));
+
   const columns = [
     {
       field: "date",
@@ -1087,62 +1112,117 @@ const DaybookPage = () => {
     {
       field: "branch",
       headerName: "Branch",
-      minWidth: 100,
-      renderCell: (row) => row.branchId?.code,
+      minWidth: 80,
+      renderCell: (row) => row.branchId?.code || "-",
     },
     {
-      field: "account",
-      headerName: "Account",
-      minWidth: 160,
-      renderCell: (row) => row.account || "-",
-    },
-    {
-      field: "category",
+      field: "type",
       headerName: "Type",
-      minWidth: 140,
+      minWidth: 110,
       renderCell: (row) => {
         if (row.category === "opening_balance") return "Opening Balance";
         const map = { income: "Receipt", expense: "Payment", transfer: "Transfer", asset: "Journal" };
         return map[row.transactionType] || row.transactionType || "-";
       },
     },
-    { field: "description", headerName: "Description", minWidth: 180 },
+    {
+      field: "category",
+      headerName: "Category",
+      minWidth: 160,
+      renderCell: (row) => {
+        if (!row.category || row.category === "opening_balance") return "-";
+        return DAYBOOK_CATEGORIES.find((c) => c.value === row.category)?.label || row.category;
+      },
+    },
+    { field: "description", headerName: "Description", minWidth: 200 },
     {
       field: "paidTo",
-      headerName: "Paid To",
-      minWidth: 130,
+      headerName: "Paid To / Received From",
+      minWidth: 160,
       renderCell: (row) => row.paidTo || "-",
     },
     {
+      field: "account",
+      headerName: "Mode",
+      minWidth: 100,
+      renderCell: (row) => row.account || "-",
+    },
+    {
       field: "transactionRef",
-      headerName: "Transaction Ref",
+      headerName: "Transaction No",
       minWidth: 140,
       renderCell: (row) => row.transactionRef || "-",
     },
     {
-      field: "amount",
-      headerName: "Amount",
+      field: "debit",
+      headerName: "Debit",
+      minWidth: 110,
+      align: "right",
+      renderCell: (row) => {
+        const type = getRowType(row);
+        return type === "expense" ? (
+          <Typography color="error.main" fontWeight={500}>
+            {formatCurrency(row.amount)}
+          </Typography>
+        ) : "-";
+      },
+    },
+    {
+      field: "credit",
+      headerName: "Credit",
+      minWidth: 110,
+      align: "right",
+      renderCell: (row) => {
+        const type = getRowType(row);
+        return type === "income" ? (
+          <Typography color="success.main" fontWeight={500}>
+            {formatCurrency(row.amount)}
+          </Typography>
+        ) : "-";
+      },
+    },
+    {
+      field: "bankBalance",
+      headerName: "Bank Balance",
       minWidth: 120,
       align: "right",
-      renderCell: (row) => (
-        <Typography
-          color={getRowType(row) === "income" ? "success.main" : "error.main"}
-        >
-          {getRowType(row) === "income" ? "+" : "-"}
-          {formatCurrency(row.amount)}
-        </Typography>
-      ),
+      renderCell: (row) => {
+        const r = balanceMap[row._id];
+        return r ? formatCurrency(r._bankBal) : "-";
+      },
+    },
+    {
+      field: "cashBalance",
+      headerName: "Cash Balance",
+      minWidth: 120,
+      align: "right",
+      renderCell: (row) => {
+        const r = balanceMap[row._id];
+        return r ? formatCurrency(r._cashBal) : "-";
+      },
+    },
+    {
+      field: "totalBalance",
+      headerName: "Total Balance",
+      minWidth: 120,
+      align: "right",
+      renderCell: (row) => {
+        const r = balanceMap[row._id];
+        return r ? (
+          <Typography fontWeight={600}>{formatCurrency(r._totalBal)}</Typography>
+        ) : "-";
+      },
     },
     {
       field: "voucher",
-      headerName: "Voucher",
+      headerName: "Voucher No",
       minWidth: 130,
       renderCell: (row) => row.voucherId?.voucherNo || "-",
     },
     {
       field: "attachments",
       headerName: "Bill",
-      minWidth: 80,
+      minWidth: 60,
       align: "center",
       renderCell: (row) =>
         row.attachments && row.attachments.length > 0 ? (

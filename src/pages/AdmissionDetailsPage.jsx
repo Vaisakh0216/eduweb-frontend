@@ -1139,7 +1139,7 @@ const AdmissionDetailsPage = () => {
     );
   if (!data) return null;
 
-  const { admission, payments, agentPayments, vouchers } = data;
+  const { admission, payments, /* agentPayments, */ vouchers } = data;
 
   const handleUploadDocument = async () => {
     if (!docFile) return;
@@ -1567,7 +1567,7 @@ const AdmissionDetailsPage = () => {
           sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}
         >
           <Tab label="Payments" />
-          {!isStaff && <Tab label="Agent Payments" />}
+          {/* !isStaff && <Tab label="Agent Payments" /> */}
           {!isStaff && <Tab label="Vouchers" />}
           {!isStaff && <Tab label="Journals" />}
           <Tab label="Documents" />
@@ -1675,7 +1675,7 @@ const AdmissionDetailsPage = () => {
           </Box>
         )}
 
-        {activeTab === 1 && (
+        {/* activeTab === 1 && (
           <Box sx={{ p: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
               <Button
@@ -1722,7 +1722,7 @@ const AdmissionDetailsPage = () => {
               </Table>
             </TableContainer>
           </Box>
-        )}
+        ) */}
 
         {activeTab === 2 && (
           <Box sx={{ p: 2 }}>
