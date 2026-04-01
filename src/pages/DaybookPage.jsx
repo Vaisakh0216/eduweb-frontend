@@ -708,11 +708,7 @@ import SearchFilters from "../components/common/SearchFilters";
 import ConfirmDialog from "../components/common/ConfirmDialog";
 import { daybookService, branchService } from "../api/services";
 import { useAuth } from "../context/AuthContext";
-import {
-  formatCurrency,
-  formatDate,
-  formatCategoryLabel,
-} from "../utils/formatters";
+import { formatCurrency, formatDate } from "../utils/formatters";
 import {
   DAYBOOK_TRANSACTION_TYPES,
   DAYBOOK_EXPENSE_CATEGORY_GROUPS,
@@ -1011,8 +1007,8 @@ const DaybookPage = () => {
       const params = {
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v)),
       };
-      if (params.startDate) params.startDate = params.startDate.toISOString();
-      if (params.endDate) params.endDate = params.endDate.toISOString();
+      if (params.startDate) params.startDate = new Date(params.startDate).toISOString();
+      if (params.endDate) params.endDate = new Date(params.endDate).toISOString();
       const res = await daybookService.export(params);
       const csv = [
         Object.keys(res.data.data[0] || {}).join(","),
@@ -1078,6 +1074,9 @@ const DaybookPage = () => {
     return incomeCategories.includes(row.category) ? "income" : "expense";
   };
 
+  const isOpeningBalance = (row) =>
+    row.category === "opening_balance" || row.transactionType === "opening_balance";
+
   // Compute per-row running balances from the visible entries (sorted by date asc)
   const entriesWithBalances = (() => {
     let bankBal = 0;
@@ -1088,7 +1087,11 @@ const DaybookPage = () => {
         const type = getRowType(row);
         const amt = row.amount || 0;
         const account = (row.account || "").toLowerCase();
-        if (type === "income") {
+        // Opening balance initialises the respective account balance
+        if (isOpeningBalance(row)) {
+          if (account === "bank") bankBal += amt;
+          else cashBal += amt; // cash / petty cash / unspecified
+        } else if (type === "income") {
           if (account === "bank") bankBal += amt;
           else if (account === "cash" || account === "petty cash") cashBal += amt;
         } else if (type === "expense") {
@@ -1174,6 +1177,14 @@ const DaybookPage = () => {
       align: "right",
       renderCell: (row) => {
         const type = getRowType(row);
+        // Opening balance is a credit entry (initialises the account balance)
+        if (isOpeningBalance(row)) {
+          return (
+            <Typography color="success.main" fontWeight={500}>
+              {formatCurrency(row.amount)}
+            </Typography>
+          );
+        }
         return type === "income" ? (
           <Typography color="success.main" fontWeight={500}>
             {formatCurrency(row.amount)}

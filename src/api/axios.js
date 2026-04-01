@@ -27,6 +27,10 @@ api.interceptors.request.use(
   }
 );
 
+// Shared refresh promise — prevents concurrent refresh attempts when multiple
+// requests fail with 401 at the same time (e.g. dashboard's Promise.all).
+let refreshPromise = null;
+
 // Response interceptor to handle token refresh
 api.interceptors.response.use(
   (response) => response,
@@ -37,19 +41,27 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          throw new Error('No refresh token');
+        // If a refresh is already in flight, reuse it instead of spawning another
+        if (!refreshPromise) {
+          const refreshToken = localStorage.getItem('refreshToken');
+          if (!refreshToken) {
+            throw new Error('No refresh token');
+          }
+
+          refreshPromise = axios
+            .post(`${API_URL}/auth/refresh-token`, { refreshToken })
+            .then((res) => {
+              const { accessToken, refreshToken: newRefreshToken } = res.data.data;
+              localStorage.setItem('accessToken', accessToken);
+              localStorage.setItem('refreshToken', newRefreshToken);
+              return accessToken;
+            })
+            .finally(() => {
+              refreshPromise = null;
+            });
         }
 
-        const response = await axios.post(`${API_URL}/auth/refresh-token`, {
-          refreshToken,
-        });
-
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
-
+        const accessToken = await refreshPromise;
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {

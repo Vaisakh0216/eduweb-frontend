@@ -767,13 +767,12 @@ import {
   admissionService,
   paymentService,
   agentPaymentService,
-  branchService,
   agentService,
   journalService,
 } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency, formatDate } from "../utils/formatters";
-import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES, DAYBOOK_ACCOUNTS, JOURNAL_TYPES } from "../utils/constants";
+import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES, DAYBOOK_ACCOUNTS } from "../utils/constants";
 
 const AdmissionDetailsPage = () => {
   const { id } = useParams();
@@ -806,7 +805,7 @@ const AdmissionDetailsPage = () => {
   const [docUploading, setDocUploading] = useState(false);
   const [journals, setJournals] = useState([]);
   const [journalDialog, setJournalDialog] = useState(false);
-  const [journalForm, setJournalForm] = useState({ type: "general", agentId: "", amount: 0, journalDate: new Date(), description: "" });
+  const [journalForm, setJournalForm] = useState({ agentId: "", amount: 0, journalDate: new Date(), description: "" });
   const [journalSubmitting, setJournalSubmitting] = useState(false);
 
   function getInitialPaymentForm() {
@@ -853,7 +852,7 @@ const AdmissionDetailsPage = () => {
     } finally {
       setLoading(false);
     }
-    // Fetch journals separately so a failure doesn't break the page
+    // Fetch SC-collection journals (agent collected SC from student)
     try {
       const journalsRes = await journalService.getByAdmission(id);
       setJournals(journalsRes.data.data || []);
@@ -863,21 +862,21 @@ const AdmissionDetailsPage = () => {
   };
 
   const handleAddJournal = async () => {
+    if (!journalForm.agentId) { alert("Please select an agent."); return; }
     setJournalSubmitting(true);
     try {
       const admission = data?.admission;
-      const needsAgent = ["sc_collected_by_agent", "agent_balance_adjustment"].includes(journalForm.type);
       await journalService.create({
         admissionId: id,
         branchId: admission?.branchId?._id || admission?.branchId,
-        type: journalForm.type,
-        ...(needsAgent && journalForm.agentId ? { agentId: journalForm.agentId } : {}),
+        type: "sc_collected_by_agent",
+        agentId: journalForm.agentId,
         amount: parseFloat(journalForm.amount),
         journalDate: journalForm.journalDate,
         description: journalForm.description,
       });
       setJournalDialog(false);
-      setJournalForm({ type: "general", agentId: "", amount: 0, journalDate: new Date(), description: "" });
+      setJournalForm({ agentId: "", amount: 0, journalDate: new Date(), description: "" });
       fetchAdmissionDetails();
     } catch (e) {
       alert(e.response?.data?.message || "Error creating journal entry");
@@ -1174,8 +1173,11 @@ const AdmissionDetailsPage = () => {
     window.open(admissionService.getDocumentUrl(id, documentId), "_blank", "noopener,noreferrer");
   };
 
-  const docsTabIndex = isStaff ? 1 : 4;
-  const journalsTabIndex = 3;
+  // Tab indices (staff sees: Payments, Documents)
+  // Non-staff sees: Payments, Vouchers, Journals, Documents
+  const vouchersTabIndex = isStaff ? -1 : 1;
+  const journalsTabIndex = isStaff ? -1 : 2;
+  const docsTabIndex = isStaff ? 1 : 3;
 
   const handleRecalculate = async () => {
     try {
@@ -1356,6 +1358,14 @@ const AdmissionDetailsPage = () => {
                       {formatCurrency(admission.serviceCharge?.deductedByAgent)}
                     </Typography>
                   </div>
+                  {admission.serviceCharge?.collectedByAgent > 0 && (
+                    <div>
+                      <span>Collected by Agent (SC):</span>
+                      <Typography color="success.main">
+                        {formatCurrency(admission.serviceCharge?.collectedByAgent)}
+                      </Typography>
+                    </div>
+                  )}
                   {admission.serviceCharge?.paidBackToCollege > 0 && (
                     <div>
                       <span>Paid Back to College:</span>
@@ -1563,7 +1573,7 @@ const AdmissionDetailsPage = () => {
       <Card>
         <Tabs
           value={activeTab}
-          onChange={(e, v) => setActiveTab(v)}
+          onChange={(_, v) => setActiveTab(v)}
           sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}
         >
           <Tab label="Payments" />
@@ -1724,7 +1734,7 @@ const AdmissionDetailsPage = () => {
           </Box>
         ) */}
 
-        {activeTab === 2 && (
+        {activeTab === vouchersTabIndex && (
           <Box sx={{ p: 2 }}>
             <TableContainer>
               <Table size="small">
@@ -1783,9 +1793,12 @@ const AdmissionDetailsPage = () => {
         )}
         {activeTab === journalsTabIndex && (
           <Box sx={{ p: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Record when an agent collects service charge directly from the student.
+              </Typography>
               <Button variant="contained" startIcon={<Add />} onClick={() => setJournalDialog(true)}>
-                Add Journal Entry
+                Record SC Collection
               </Button>
             </Box>
             <TableContainer>
@@ -1794,38 +1807,33 @@ const AdmissionDetailsPage = () => {
                   <TableRow>
                     <TableCell>Journal No</TableCell>
                     <TableCell>Date</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Category</TableCell>
                     <TableCell>Agent</TableCell>
                     <TableCell>Description</TableCell>
-                    <TableCell align="right">Amount</TableCell>
+                    <TableCell align="right">SC Amount</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {journals.map((j) => {
-                    const categoryLabel = JOURNAL_TYPES.find((t) => t.value === j.type)?.label || j.type;
                     const isPending = j.status === "pending";
                     return (
                       <TableRow key={j._id}>
                         <TableCell>{j.journalNo}</TableCell>
                         <TableCell>{formatDate(j.journalDate)}</TableCell>
-                        <TableCell><Chip label="Journal" size="small" variant="outlined" /></TableCell>
-                        <TableCell>{categoryLabel}</TableCell>
                         <TableCell>{j.agentId?.name || "-"}</TableCell>
                         <TableCell>{j.description}</TableCell>
                         <TableCell align="right">{formatCurrency(j.amount)}</TableCell>
                         <TableCell>
                           <Chip
-                            label={j.status === "settled" ? "Settled" : j.status === "pending" ? "Pending" : "Completed"}
+                            label={j.status === "settled" ? "Settled" : "Pending"}
                             size="small"
-                            color={j.status === "settled" ? "success" : j.status === "pending" ? "warning" : "default"}
+                            color={j.status === "settled" ? "success" : "warning"}
                           />
                         </TableCell>
                         <TableCell>
                           {isPending && (
-                            <Tooltip title="Mark as Settled">
+                            <Tooltip title="Mark as Settled (agent remitted SC to consultancy)">
                               <IconButton size="small" color="success" onClick={() => handleSettleJournal(j._id)}>
                                 <Add fontSize="small" />
                               </IconButton>
@@ -1842,7 +1850,7 @@ const AdmissionDetailsPage = () => {
                   })}
                   {journals.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={9} align="center">No journal entries found</TableCell>
+                      <TableCell colSpan={7} align="center">No SC collection entries found</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -1851,9 +1859,9 @@ const AdmissionDetailsPage = () => {
             {journals.filter((j) => j.status === "pending").length > 0 && (
               <Box sx={{ mt: 2, p: 1.5, bgcolor: "warning.lighter", borderRadius: 1, border: "1px solid", borderColor: "warning.main" }}>
                 <Typography variant="body2" color="warning.dark">
-                  <strong>SC Payable by Agent: </strong>
+                  <strong>SC Pending Remittance: </strong>
                   {formatCurrency(journals.filter((j) => j.status === "pending").reduce((s, j) => s + j.amount, 0))}
-                  {" — Agent collected this SC from the student and needs to remit it to consultancy."}
+                  {" — Agent collected this SC from the student and has not yet remitted it to consultancy."}
                 </Typography>
               </Box>
             )}
@@ -1959,46 +1967,37 @@ const AdmissionDetailsPage = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Add Journal Entry Dialog */}
+      {/* SC Collection by Agent Dialog */}
       <Dialog open={journalDialog} onClose={() => setJournalDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add Journal Entry</DialogTitle>
+        <DialogTitle>Record SC Collection by Agent</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Box sx={{ p: 1.5, mb: 2, mt: 1, bgcolor: "info.lighter", borderRadius: 1, border: "1px solid", borderColor: "info.light" }}>
+            <Typography variant="body2" color="info.dark">
+              Use this when a student paid the service charge directly to the agent instead of the consultancy.
+              This will be recorded against the agent and reflected in the service charge summary.
+            </Typography>
+          </Box>
+          <Grid container spacing={2}>
             <Grid item xs={12}>
               <FormControl fullWidth required>
-                <InputLabel>Type</InputLabel>
+                <InputLabel>Agent</InputLabel>
                 <Select
-                  value={journalForm.type}
-                  onChange={(e) => setJournalForm({ ...journalForm, type: e.target.value, agentId: "" })}
-                  label="Type"
+                  value={journalForm.agentId}
+                  onChange={(e) => setJournalForm({ ...journalForm, agentId: e.target.value })}
+                  label="Agent"
                 >
-                  {JOURNAL_TYPES.map((t) => (
-                    <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                  <MenuItem value="">— Select Agent —</MenuItem>
+                  {agents.map((a) => (
+                    <MenuItem key={a._id} value={a._id}>{a.name} ({a.agentType})</MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-            {JOURNAL_TYPES.find((t) => t.value === journalForm.type)?.needsAgent && (
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Agent</InputLabel>
-                  <Select
-                    value={journalForm.agentId}
-                    onChange={(e) => setJournalForm({ ...journalForm, agentId: e.target.value })}
-                    label="Agent"
-                  >
-                    <MenuItem value="">— None —</MenuItem>
-                    {agents.map((a) => (
-                      <MenuItem key={a._id} value={a._id}>{a.name} ({a.agentType})</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            )}
             <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Amount"
+                required
+                label="SC Amount Collected"
                 type="number"
                 value={journalForm.amount}
                 onChange={(e) => setJournalForm({ ...journalForm, amount: e.target.value })}
@@ -2018,7 +2017,7 @@ const AdmissionDetailsPage = () => {
                 fullWidth
                 required
                 label="Description"
-                placeholder="Explain the purpose of this adjustment"
+                placeholder="e.g. Student paid SC directly to agent on admission day"
                 value={journalForm.description}
                 onChange={(e) => setJournalForm({ ...journalForm, description: e.target.value })}
               />
@@ -2030,7 +2029,7 @@ const AdmissionDetailsPage = () => {
           <Button
             variant="contained"
             onClick={handleAddJournal}
-            disabled={!journalForm.amount || !journalForm.description || journalSubmitting}
+            disabled={!journalForm.agentId || !journalForm.amount || !journalForm.description || journalSubmitting}
             startIcon={journalSubmitting ? <CircularProgress size={16} color="inherit" /> : null}
           >
             {journalSubmitting ? "Saving..." : "Save"}
