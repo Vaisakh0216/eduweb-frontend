@@ -354,7 +354,7 @@ const DashboardPage = () => {
               fontWeight="bold"
               sx={{ textTransform: "uppercase", letterSpacing: 1 }}
             >
-              Business Profit
+              Business Profit(ACTUAL)
             </Typography>
           </Box>
           <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -381,7 +381,7 @@ const DashboardPage = () => {
             </Grid>
             <Grid item xs={12} sm={4}>
               <StatCard
-                title="Gross Profit"
+                title="Actual Gross Profit"
                 value={formatCurrency(
                   stats?.financial?.businessProfit?.grossProfit || 0
                 )}
@@ -409,7 +409,7 @@ const DashboardPage = () => {
             {/* Row 2: Gross Profit → Net Profit */}
             <Grid item xs={12} sm={4}>
               <StatCard
-                title="Gross Profit"
+                title="Actual Gross Profit"
                 value={formatCurrency(
                   stats?.financial?.businessProfit?.grossProfit || 0
                 )}
