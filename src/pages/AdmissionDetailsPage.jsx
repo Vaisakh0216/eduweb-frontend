@@ -756,9 +756,11 @@ import {
   MenuItem,
   CircularProgress,
   Alert,
+  Divider,
+  Avatar,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { Edit, Add, Print, AttachFile, Delete, CloudUpload } from "@mui/icons-material";
+import { Edit, Add, Print, AttachFile, Delete, CloudUpload, Send } from "@mui/icons-material";
 import { IconButton, Tooltip } from "@mui/material";
 import PageHeader from "../components/common/PageHeader";
 import StatusChip from "../components/common/StatusChip";
@@ -777,7 +779,7 @@ import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES, DAYBOOK_ACCOUNTS } from "..
 const AdmissionDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isStaff, isSuperAdmin, isAdmin } = useAuth();
+  const { user, isStaff, isSuperAdmin, isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -807,6 +809,9 @@ const AdmissionDetailsPage = () => {
   const [journalDialog, setJournalDialog] = useState(false);
   const [journalForm, setJournalForm] = useState({ agentId: "", amount: 0, journalDate: new Date(), description: "" });
   const [journalSubmitting, setJournalSubmitting] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
 
   const getAccountFromMode = (mode) => (mode === 'Cash' ? 'Cash' : 'Bank');
 
@@ -860,6 +865,39 @@ const AdmissionDetailsPage = () => {
       setJournals(journalsRes.data.data || []);
     } catch (error) {
       console.error("Error fetching journals:", error);
+    }
+    // Fetch comments (non-staff only)
+    if (!isStaff) {
+      try {
+        const commentsRes = await admissionService.getComments(id);
+        setComments(commentsRes.data.data || []);
+      } catch (error) {
+        console.error("Error fetching comments:", error);
+      }
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+    setCommentSubmitting(true);
+    try {
+      const res = await admissionService.addComment(id, { text: commentText.trim() });
+      setComments([res.data.data, ...comments]);
+      setCommentText("");
+    } catch (e) {
+      console.error("Error adding comment:", e);
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("Delete this comment?")) return;
+    try {
+      await admissionService.deleteComment(id, commentId);
+      setComments(comments.filter((c) => c._id !== commentId));
+    } catch (e) {
+      console.error("Error deleting comment:", e);
     }
   };
 
@@ -1175,11 +1213,13 @@ const AdmissionDetailsPage = () => {
     window.open(admissionService.getDocumentUrl(id, documentId), "_blank", "noopener,noreferrer");
   };
 
-  // Tab indices (staff sees: Payments, Documents)
-  // Non-staff sees: Payments, Vouchers, Journals, Documents
+  // Tab indices
+  // Staff:     0=Payments, 1=Documents
+  // Non-staff: 0=Payments, 1=Vouchers, 2=Journals, 3=Documents, 4=Comments
   const vouchersTabIndex = isStaff ? -1 : 1;
   const journalsTabIndex = isStaff ? -1 : 2;
   const docsTabIndex = isStaff ? 1 : 3;
+  const commentsTabIndex = isStaff ? -1 : 4;
 
   const handleRecalculate = async () => {
     try {
@@ -1583,6 +1623,7 @@ const AdmissionDetailsPage = () => {
           {!isStaff && <Tab label="Vouchers" />}
           {!isStaff && <Tab label="Journals" />}
           <Tab label="Documents" />
+          {!isStaff && <Tab label="Comments" />}
         </Tabs>
 
         {activeTab === 0 && (
@@ -1935,6 +1976,74 @@ const AdmissionDetailsPage = () => {
             </TableContainer>
           </Box>
         )}
+        {activeTab === commentsTabIndex && (
+          <Box sx={{ p: 2 }}>
+            {/* Input */}
+            <Box sx={{ display: "flex", gap: 1, mb: 3 }}>
+              <TextField
+                fullWidth
+                multiline
+                minRows={2}
+                maxRows={5}
+                size="small"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleAddComment();
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={handleAddComment}
+                disabled={commentSubmitting || !commentText.trim()}
+                sx={{ alignSelf: "flex-end", minWidth: 48, px: 1.5 }}
+              >
+                {commentSubmitting ? <CircularProgress size={20} /> : <Send fontSize="small" />}
+              </Button>
+            </Box>
+
+            {/* List */}
+            {comments.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+                No comments yet
+              </Typography>
+            ) : (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {comments.map((c) => (
+                  <Box key={c._id}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                      <Avatar sx={{ width: 32, height: 32, fontSize: 13, bgcolor: "primary.main" }}>
+                        {c.createdBy?.firstName?.[0]}{c.createdBy?.lastName?.[0]}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <Typography variant="body2" fontWeight="bold">
+                            {c.createdBy?.firstName} {c.createdBy?.lastName}
+                            <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                              {new Date(c.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </Typography>
+                          </Typography>
+                          {(isSuperAdmin || isAdmin || c.createdBy?._id === user?._id) && (
+                            <Tooltip title="Delete">
+                              <IconButton size="small" color="error" onClick={() => handleDeleteComment(c._id)}>
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
+                        <Typography variant="body2" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}>
+                          {c.text}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Divider sx={{ mt: 2 }} />
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
       </Card>
 
       {/* Upload Document Dialog */}
@@ -2241,6 +2350,32 @@ const AdmissionDetailsPage = () => {
                   </Grid>
                 </>
               )}
+
+            {/* Service Charge from College */}
+            {paymentForm.payerType === "College" &&
+              paymentForm.receiverType === "Consultancy" &&
+              !isStaff && (
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Payment Type</InputLabel>
+                    <Select
+                      value={paymentForm.isServiceChargePayment ? "sc" : "fee"}
+                      onChange={(e) => {
+                        const isSC = e.target.value === "sc";
+                        setPaymentForm({
+                          ...paymentForm,
+                          isServiceChargePayment: isSC,
+                          serviceChargeDeducted: isSC ? paymentForm.amount : 0,
+                        });
+                      }}
+                      label="Payment Type"
+                    >
+                      <MenuItem value="fee">College Fee (regular payment)</MenuItem>
+                      <MenuItem value="sc">Service Charge from College</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+            )}
 
             {/* Service Charge Options - For Student/Agent -> Consultancy payments */}
             {((paymentForm.payerType === "Student" &&

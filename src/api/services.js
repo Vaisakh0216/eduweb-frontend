@@ -72,6 +72,9 @@ export const admissionService = {
   uploadDocument: (id, formData) => api.post(`/admissions/${id}/documents`, formData),
   deleteDocument: (id, documentId) => api.delete(`/admissions/${id}/documents/${documentId}`),
   getDocumentUrl: (id, documentId) => `${api.defaults.baseURL}/admissions/${id}/documents/${documentId}`,
+  getComments: (id) => api.get(`/admissions/${id}/comments`),
+  addComment: (id, data) => api.post(`/admissions/${id}/comments`, data),
+  deleteComment: (id, commentId) => api.delete(`/admissions/${id}/comments/${commentId}`),
 };
 
 // Payments
