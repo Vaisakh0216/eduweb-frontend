@@ -776,7 +776,12 @@ const DaybookPage = () => {
   const [clearError, setClearError] = useState("");
   const [clearSuccess, setClearSuccess] = useState("");
   const [obDialogOpen, setObDialogOpen] = useState(false);
-  const [obForm, setObForm] = useState({ branchId: "", amount: "", date: new Date(), description: "" });
+  const [obForm, setObForm] = useState({
+    branchId: "",
+    amount: "",
+    date: new Date(),
+    description: "",
+  });
   const [obCurrent, setObCurrent] = useState(null);
   const [obLoading, setObLoading] = useState(false);
   const [obError, setObError] = useState("");
@@ -955,7 +960,12 @@ const DaybookPage = () => {
 
   const openObDialog = async () => {
     const defaultBranch = branches[0]?._id || "";
-    setObForm({ branchId: defaultBranch, amount: "", date: new Date(), description: "" });
+    setObForm({
+      branchId: defaultBranch,
+      amount: "",
+      date: new Date(),
+      description: "",
+    });
     setObError("");
     setObCurrent(null);
     if (defaultBranch) {
@@ -1007,8 +1017,10 @@ const DaybookPage = () => {
       const params = {
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v)),
       };
-      if (params.startDate) params.startDate = new Date(params.startDate).toISOString();
-      if (params.endDate) params.endDate = new Date(params.endDate).toISOString();
+      if (params.startDate)
+        params.startDate = new Date(params.startDate).toISOString();
+      if (params.endDate)
+        params.endDate = new Date(params.endDate).toISOString();
       const res = await daybookService.export(params);
       const csv = [
         Object.keys(res.data.data[0] || {}).join(","),
@@ -1075,7 +1087,8 @@ const DaybookPage = () => {
   };
 
   const isOpeningBalance = (row) =>
-    row.category === "opening_balance" || row.transactionType === "opening_balance";
+    row.category === "opening_balance" ||
+    row.transactionType === "opening_balance";
 
   // Compute per-row running balances from the visible entries (sorted by date asc)
   const entriesWithBalances = (() => {
@@ -1093,17 +1106,26 @@ const DaybookPage = () => {
           else cashBal += amt; // cash / petty cash / unspecified
         } else if (type === "income") {
           if (account === "bank") bankBal += amt;
-          else if (account === "cash" || account === "petty cash") cashBal += amt;
+          else if (account === "cash" || account === "petty cash")
+            cashBal += amt;
         } else if (type === "expense") {
           if (account === "bank") bankBal -= amt;
-          else if (account === "cash" || account === "petty cash") cashBal -= amt;
+          else if (account === "cash" || account === "petty cash")
+            cashBal -= amt;
         }
-        return { ...row, _bankBal: bankBal, _cashBal: cashBal, _totalBal: bankBal + cashBal };
+        return {
+          ...row,
+          _bankBal: bankBal,
+          _cashBal: cashBal,
+          _totalBal: bankBal + cashBal,
+        };
       });
   })();
 
   // Restore original display order after computing balances
-  const balanceMap = Object.fromEntries(entriesWithBalances.map((r) => [r._id, r]));
+  const balanceMap = Object.fromEntries(
+    entriesWithBalances.map((r) => [r._id, r])
+  );
 
   const columns = [
     {
@@ -1124,7 +1146,12 @@ const DaybookPage = () => {
       minWidth: 110,
       renderCell: (row) => {
         if (row.category === "opening_balance") return "Opening Balance";
-        const map = { income: "Receipt", expense: "Payment", transfer: "Transfer", asset: "Journal" };
+        const map = {
+          income: "Receipt",
+          expense: "Payment",
+          transfer: "Transfer",
+          asset: "Journal",
+        };
         return map[row.transactionType] || row.transactionType || "-";
       },
     },
@@ -1134,7 +1161,10 @@ const DaybookPage = () => {
       minWidth: 160,
       renderCell: (row) => {
         if (!row.category || row.category === "opening_balance") return "-";
-        return DAYBOOK_CATEGORIES.find((c) => c.value === row.category)?.label || row.category;
+        return (
+          DAYBOOK_CATEGORIES.find((c) => c.value === row.category)?.label ||
+          row.category
+        );
       },
     },
     { field: "description", headerName: "Description", minWidth: 200 },
@@ -1167,7 +1197,9 @@ const DaybookPage = () => {
           <Typography color="error.main" fontWeight={500}>
             {formatCurrency(row.amount)}
           </Typography>
-        ) : "-";
+        ) : (
+          "-"
+        );
       },
     },
     {
@@ -1189,7 +1221,9 @@ const DaybookPage = () => {
           <Typography color="success.main" fontWeight={500}>
             {formatCurrency(row.amount)}
           </Typography>
-        ) : "-";
+        ) : (
+          "-"
+        );
       },
     },
     {
@@ -1220,8 +1254,12 @@ const DaybookPage = () => {
       renderCell: (row) => {
         const r = balanceMap[row._id];
         return r ? (
-          <Typography fontWeight={600}>{formatCurrency(r._totalBal)}</Typography>
-        ) : "-";
+          <Typography fontWeight={600}>
+            {formatCurrency(r._totalBal)}
+          </Typography>
+        ) : (
+          "-"
+        );
       },
     },
     {
@@ -1336,7 +1374,7 @@ const DaybookPage = () => {
             <Card>
               <CardContent>
                 <Typography variant="body2" color="text.secondary">
-                  Total Income
+                  Total Receipts
                 </Typography>
                 <Typography variant="h5" color="success.main">
                   {formatCurrency(summary.totalIncome)}
@@ -1348,7 +1386,7 @@ const DaybookPage = () => {
             <Card>
               <CardContent>
                 <Typography variant="body2" color="text.secondary">
-                  Total Expense
+                  Total Payments
                 </Typography>
                 <Typography variant="h5" color="error.main">
                   {formatCurrency(summary.totalExpense)}
@@ -1360,7 +1398,7 @@ const DaybookPage = () => {
             <Card>
               <CardContent>
                 <Typography variant="body2" color="text.secondary">
-                  Net Profit
+                  Net Cash Flow
                 </Typography>
                 <Typography
                   variant="h5"
@@ -1488,7 +1526,9 @@ const DaybookPage = () => {
                   }
                   label="Transaction Type"
                 >
-                  {DAYBOOK_TRANSACTION_TYPES.filter((t) => t.value !== "opening_balance").map((t) => (
+                  {DAYBOOK_TRANSACTION_TYPES.filter(
+                    (t) => t.value !== "opening_balance"
+                  ).map((t) => (
                     <MenuItem key={t.value} value={t.value}>
                       {t.label}
                     </MenuItem>
@@ -1724,7 +1764,12 @@ const DaybookPage = () => {
       />
 
       {/* Opening Balance Dialog */}
-      <Dialog open={obDialogOpen} onClose={() => setObDialogOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={obDialogOpen}
+        onClose={() => setObDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>Set Opening Balance</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
@@ -1737,7 +1782,9 @@ const DaybookPage = () => {
                   label="Branch"
                 >
                   {branches.map((b) => (
-                    <MenuItem key={b._id} value={b._id}>{b.name}</MenuItem>
+                    <MenuItem key={b._id} value={b._id}>
+                      {b.name}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -1745,8 +1792,9 @@ const DaybookPage = () => {
             {obCurrent && (
               <Grid item xs={12}>
                 <Alert severity="info" sx={{ py: 0.5 }}>
-                  Current opening balance: <strong>{formatCurrency(obCurrent.amount)}</strong>
-                  {" "}(set on {formatDate(obCurrent.date)}). Saving will replace it.
+                  Current opening balance:{" "}
+                  <strong>{formatCurrency(obCurrent.amount)}</strong> (set on{" "}
+                  {formatDate(obCurrent.date)}). Saving will replace it.
                 </Alert>
               </Grid>
             )}
@@ -1765,7 +1813,9 @@ const DaybookPage = () => {
                 fullWidth
                 size="small"
                 value={obForm.amount}
-                onChange={(e) => setObForm((f) => ({ ...f, amount: e.target.value }))}
+                onChange={(e) =>
+                  setObForm((f) => ({ ...f, amount: e.target.value }))
+                }
                 inputProps={{ min: 0 }}
               />
             </Grid>
@@ -1775,7 +1825,9 @@ const DaybookPage = () => {
                 fullWidth
                 size="small"
                 value={obForm.description}
-                onChange={(e) => setObForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) =>
+                  setObForm((f) => ({ ...f, description: e.target.value }))
+                }
               />
             </Grid>
             {obError && (
@@ -1787,7 +1839,11 @@ const DaybookPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setObDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleObSave} disabled={obLoading}>
+          <Button
+            variant="contained"
+            onClick={handleObSave}
+            disabled={obLoading}
+          >
             {obLoading ? "Saving..." : "Save"}
           </Button>
         </DialogActions>

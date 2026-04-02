@@ -457,7 +457,7 @@ const DashboardPage = () => {
           <Grid container spacing={3} sx={{ mb: 3 }}>
             <Grid item xs={12} sm={4}>
               <StatCard
-                title="Fee Income"
+                title="Fee Collected from Students"
                 value={formatCurrency(
                   stats?.financial?.feeManagement?.feeIncome || 0
                 )}
