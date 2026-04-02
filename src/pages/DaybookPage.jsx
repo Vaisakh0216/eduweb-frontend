@@ -965,6 +965,7 @@ const DaybookPage = () => {
       amount: "",
       date: new Date(),
       description: "",
+      account: "Cash",
     });
     setObError("");
     setObCurrent(null);
@@ -1001,6 +1002,7 @@ const DaybookPage = () => {
         amount: parseFloat(obForm.amount),
         date: obForm.date,
         description: obForm.description || "Opening Balance",
+        account: obForm.account || "Cash",
       });
       setObDialogOpen(false);
       fetchEntries();
@@ -1805,6 +1807,19 @@ const DaybookPage = () => {
                 onChange={(d) => setObForm((f) => ({ ...f, date: d }))}
                 slotProps={{ textField: { fullWidth: true, size: "small" } }}
               />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Account</InputLabel>
+                <Select
+                  value={obForm.account || "Cash"}
+                  onChange={(e) => setObForm((f) => ({ ...f, account: e.target.value }))}
+                  label="Account"
+                >
+                  <MenuItem value="Cash">Cash</MenuItem>
+                  <MenuItem value="Bank">Bank</MenuItem>
+                </Select>
+              </FormControl>
             </Grid>
             <Grid item xs={12}>
               <TextField
