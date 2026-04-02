@@ -222,103 +222,6 @@ const DashboardPage = () => {
       {/* Financial Stats - hidden for staff */}
       {!isStaff && (
         <>
-          {/* Business Profit */}
-          <Box sx={{ mb: 1 }}>
-            <Typography
-              variant="subtitle2"
-              color="text.secondary"
-              fontWeight="bold"
-              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
-            >
-              Business Profit
-            </Typography>
-          </Box>
-          <Grid container spacing={3} sx={{ mb: 3 }}>
-            {/* Row 1: Service Revenue → Gross Profit */}
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                title="Service Revenue"
-                value={formatCurrency(
-                  stats?.financial?.businessProfit?.serviceRevenue || 0
-                )}
-                icon={<TrendingUp />}
-                color="success"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                title="Consultant Commission"
-                value={formatCurrency(
-                  stats?.financial?.businessProfit?.consultantCommission || 0
-                )}
-                icon={<TrendingDown />}
-                color="warning"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                title="Gross Profit"
-                value={formatCurrency(
-                  stats?.financial?.businessProfit?.grossProfit || 0
-                )}
-                icon={<AccountBalance />}
-                color={
-                  (stats?.financial?.businessProfit?.grossProfit || 0) >= 0
-                    ? "info"
-                    : "error"
-                }
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Divider>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ textTransform: "uppercase", letterSpacing: 1 }}
-                >
-                  Gross Profit – Operating Expenses = Net Profit
-                </Typography>
-              </Divider>
-            </Grid>
-
-            {/* Row 2: Gross Profit → Net Profit */}
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                title="Gross Profit"
-                value={formatCurrency(
-                  stats?.financial?.businessProfit?.grossProfit || 0
-                )}
-                icon={<TrendingUp />}
-                color="info"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                title="Operating Expenses"
-                value={formatCurrency(
-                  stats?.financial?.businessProfit?.operatingExpenses || 0
-                )}
-                icon={<TrendingDown />}
-                color="error"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                title="Net Profit"
-                value={formatCurrency(
-                  stats?.financial?.businessProfit?.netProfit || 0
-                )}
-                icon={<AccountBalance />}
-                color={
-                  (stats?.financial?.businessProfit?.netProfit || 0) >= 0
-                    ? "primary"
-                    : "error"
-                }
-              />
-            </Grid>
-          </Grid>
-
           {/* Business Performance (Projected) */}
           <Box sx={{ mb: 1 }}>
             <Typography
@@ -442,6 +345,103 @@ const DashboardPage = () => {
               </Grid>
             </CardContent>
           </Card>
+
+          {/* Business Profit */}
+          <Box sx={{ mb: 1 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+            >
+              Business Profit
+            </Typography>
+          </Box>
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            {/* Row 1: Service Revenue → Gross Profit */}
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Service Revenue"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.serviceRevenue || 0
+                )}
+                icon={<TrendingUp />}
+                color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Consultant Commission"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.consultantCommission || 0
+                )}
+                icon={<TrendingDown />}
+                color="warning"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Gross Profit"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.grossProfit || 0
+                )}
+                icon={<AccountBalance />}
+                color={
+                  (stats?.financial?.businessProfit?.grossProfit || 0) >= 0
+                    ? "info"
+                    : "error"
+                }
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+                >
+                  Gross Profit – Operating Expenses = Net Profit
+                </Typography>
+              </Divider>
+            </Grid>
+
+            {/* Row 2: Gross Profit → Net Profit */}
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Gross Profit"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.grossProfit || 0
+                )}
+                icon={<TrendingUp />}
+                color="info"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Operating Expenses"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.operatingExpenses || 0
+                )}
+                icon={<TrendingDown />}
+                color="error"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Net Profit"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.netProfit || 0
+                )}
+                icon={<AccountBalance />}
+                color={
+                  (stats?.financial?.businessProfit?.netProfit || 0) >= 0
+                    ? "primary"
+                    : "error"
+                }
+              />
+            </Grid>
+          </Grid>
 
           {/* Fee Management */}
           <Box sx={{ mb: 1 }}>
