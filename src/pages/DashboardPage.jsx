@@ -272,7 +272,11 @@ const DashboardPage = () => {
 
             <Grid item xs={12}>
               <Divider>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+                >
                   Gross Profit – Operating Expenses = Net Profit
                 </Typography>
               </Divider>
@@ -314,6 +318,130 @@ const DashboardPage = () => {
               />
             </Grid>
           </Grid>
+
+          {/* Business Performance (Projected) */}
+          <Box sx={{ mb: 1 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+            >
+              Business Performance (Projected)
+            </Typography>
+          </Box>
+          <Card sx={{ mb: 3, border: "1px solid", borderColor: "divider" }}>
+            <CardContent>
+              {/* <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+                Total Service Revenue − Total Commission = Projected Gross Profit
+              </Typography> */}
+              <Grid container spacing={3} alignItems="center">
+                <Grid item xs={12} sm={4}>
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      p: 1.5,
+                      bgcolor: "success.50",
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor: "success.200",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      gutterBottom
+                    >
+                      Total Service Revenue
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color="success.main"
+                    >
+                      {formatCurrency(stats?.serviceRevenue?.total || 0)}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      p: 1.5,
+                      bgcolor: "warning.50",
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor: "warning.200",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      gutterBottom
+                    >
+                      Total Commission
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color="warning.main"
+                    >
+                      {formatCurrency(stats?.consultantCommission?.total || 0)}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Box
+                    sx={{
+                      textAlign: "center",
+                      p: 1.5,
+                      bgcolor:
+                        (stats?.serviceRevenue?.total || 0) -
+                          (stats?.consultantCommission?.total || 0) >=
+                        0
+                          ? "primary.50"
+                          : "error.50",
+                      borderRadius: 1,
+                      border: "1px solid",
+                      borderColor:
+                        (stats?.serviceRevenue?.total || 0) -
+                          (stats?.consultantCommission?.total || 0) >=
+                        0
+                          ? "primary.200"
+                          : "error.200",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      gutterBottom
+                    >
+                      Projected Gross Profit
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color={
+                        (stats?.serviceRevenue?.total || 0) -
+                          (stats?.consultantCommission?.total || 0) >=
+                        0
+                          ? "primary.main"
+                          : "error.main"
+                      }
+                    >
+                      {formatCurrency(
+                        (stats?.serviceRevenue?.total || 0) -
+                          (stats?.consultantCommission?.total || 0)
+                      )}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
 
           {/* Fee Management */}
           <Box sx={{ mb: 1 }}>
@@ -373,25 +501,57 @@ const DashboardPage = () => {
                     variant="subtitle2"
                     color="text.secondary"
                     fontWeight="bold"
-                    sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 1.5 }}
+                    sx={{
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                      mb: 1.5,
+                    }}
                   >
                     Service Revenue
                   </Typography>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                    <Typography variant="body2" color="text.secondary">Total</Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 0.5,
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Total
+                    </Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {formatCurrency(stats?.serviceRevenue?.total || 0)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                    <Typography variant="body2" color="success.main">Received</Typography>
-                    <Typography variant="body2" fontWeight="bold" color="success.main">
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 0.5,
+                    }}
+                  >
+                    <Typography variant="body2" color="success.main">
+                      Received
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color="success.main"
+                    >
                       {formatCurrency(stats?.serviceRevenue?.received || 0)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography variant="body2" color="error.main">Pending</Typography>
-                    <Typography variant="body2" fontWeight="bold" color="error.main">
+                  <Box
+                    sx={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography variant="body2" color="error.main">
+                      Pending
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color="error.main"
+                    >
                       {formatCurrency(stats?.serviceRevenue?.pending || 0)}
                     </Typography>
                   </Box>
@@ -405,26 +565,60 @@ const DashboardPage = () => {
                     variant="subtitle2"
                     color="text.secondary"
                     fontWeight="bold"
-                    sx={{ textTransform: "uppercase", letterSpacing: 1, mb: 1.5 }}
+                    sx={{
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                      mb: 1.5,
+                    }}
                   >
                     Consultant Commission
                   </Typography>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                    <Typography variant="body2" color="text.secondary">Total</Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 0.5,
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Total
+                    </Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {formatCurrency(stats?.consultantCommission?.total || 0)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                    <Typography variant="body2" color="success.main">Paid to Consultants</Typography>
-                    <Typography variant="body2" fontWeight="bold" color="success.main">
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 0.5,
+                    }}
+                  >
+                    <Typography variant="body2" color="success.main">
+                      Paid to Consultants
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color="success.main"
+                    >
                       {formatCurrency(stats?.consultantCommission?.paid || 0)}
                     </Typography>
                   </Box>
-                  <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography variant="body2" color="error.main">Consultant Payable</Typography>
-                    <Typography variant="body2" fontWeight="bold" color="error.main">
-                      {formatCurrency(stats?.consultantCommission?.payable || 0)}
+                  <Box
+                    sx={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <Typography variant="body2" color="error.main">
+                      Consultant Payable
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight="bold"
+                      color="error.main"
+                    >
+                      {formatCurrency(
+                        stats?.consultantCommission?.payable || 0
+                      )}
                     </Typography>
                   </Box>
                 </CardContent>
