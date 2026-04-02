@@ -1613,7 +1613,15 @@ const AdmissionDetailsPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {payments?.map((p) => (
+                  {(isStaff
+                    ? payments?.filter(
+                        (p) =>
+                          p.payerType === "Student" &&
+                          (p.receiverType === "Consultancy" ||
+                            p.receiverType === "College")
+                      )
+                    : payments
+                  )?.map((p) => (
                     <TableRow key={p._id}>
                       <TableCell>{formatDate(p.paymentDate)}</TableCell>
                       <TableCell>{p.payerType}</TableCell>

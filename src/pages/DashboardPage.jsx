@@ -11,6 +11,7 @@ import {
   MenuItem,
   CircularProgress,
   Chip,
+  Divider,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
@@ -233,6 +234,7 @@ const DashboardPage = () => {
             </Typography>
           </Box>
           <Grid container spacing={3} sx={{ mb: 3 }}>
+            {/* Row 1: Service Revenue → Gross Profit */}
             <Grid item xs={12} sm={4}>
               <StatCard
                 title="Service Revenue"
@@ -241,6 +243,50 @@ const DashboardPage = () => {
                 )}
                 icon={<TrendingUp />}
                 color="success"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Consultant Commission"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.consultantCommission || 0
+                )}
+                icon={<TrendingDown />}
+                color="warning"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Gross Profit"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.grossProfit || 0
+                )}
+                icon={<AccountBalance />}
+                color={
+                  (stats?.financial?.businessProfit?.grossProfit || 0) >= 0
+                    ? "info"
+                    : "error"
+                }
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
+                  Gross Profit – Operating Expenses = Net Profit
+                </Typography>
+              </Divider>
+            </Grid>
+
+            {/* Row 2: Gross Profit → Net Profit */}
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Gross Profit"
+                value={formatCurrency(
+                  stats?.financial?.businessProfit?.grossProfit || 0
+                )}
+                icon={<TrendingUp />}
+                color="info"
               />
             </Grid>
             <Grid item xs={12} sm={4}>

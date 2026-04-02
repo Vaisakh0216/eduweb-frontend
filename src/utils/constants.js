@@ -29,6 +29,7 @@ export const REFERRAL_SOURCES = [
   { value: 'Walk-in', label: 'Walk-in' },
   { value: 'Reference', label: 'Reference' },
   { value: 'Advertisement', label: 'Advertisement' },
+  { value: 'Telecaller', label: 'Telecaller' },
   { value: 'Other', label: 'Other' },
 ];
 
