@@ -808,6 +808,8 @@ const AdmissionDetailsPage = () => {
   const [journalForm, setJournalForm] = useState({ agentId: "", amount: 0, journalDate: new Date(), description: "" });
   const [journalSubmitting, setJournalSubmitting] = useState(false);
 
+  const getAccountFromMode = (mode) => (mode === 'Cash' ? 'Cash' : 'Bank');
+
   function getInitialPaymentForm() {
     return {
       payerType: "Student",
@@ -2129,6 +2131,7 @@ const AdmissionDetailsPage = () => {
                       setPaymentForm({
                         ...paymentForm,
                         paymentMode: e.target.value,
+                        account: getAccountFromMode(e.target.value),
                       })
                     }
                     label="Payment Mode"
@@ -2144,20 +2147,12 @@ const AdmissionDetailsPage = () => {
             )}
             {!(paymentForm.payerType === "Student" && paymentForm.receiverType === "College") && (
               <Grid item xs={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Account</InputLabel>
-                  <Select
-                    value={paymentForm.account || "Cash"}
-                    onChange={(e) =>
-                      setPaymentForm({ ...paymentForm, account: e.target.value })
-                    }
-                    label="Account"
-                  >
-                    {DAYBOOK_ACCOUNTS.map((a) => (
-                      <MenuItem key={a.value} value={a.value}>{a.label}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <TextField
+                  fullWidth
+                  label="Account"
+                  value={getAccountFromMode(paymentForm.paymentMode)}
+                  InputProps={{ readOnly: true }}
+                />
               </Grid>
             )}
             <Grid item xs={6}>
@@ -2411,7 +2406,11 @@ const AdmissionDetailsPage = () => {
                 <InputLabel>Payment Mode</InputLabel>
                 <Select
                   value={editPaymentForm.paymentMode}
-                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, paymentMode: e.target.value })}
+                  onChange={(e) => setEditPaymentForm({
+                    ...editPaymentForm,
+                    paymentMode: e.target.value,
+                    account: getAccountFromMode(e.target.value),
+                  })}
                   label="Payment Mode"
                 >
                   {PAYMENT_MODES.map((m) => (
@@ -2421,18 +2420,12 @@ const AdmissionDetailsPage = () => {
               </FormControl>
             </Grid>
             <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel>Account</InputLabel>
-                <Select
-                  value={editPaymentForm.account || 'Cash'}
-                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, account: e.target.value })}
-                  label="Account"
-                >
-                  {DAYBOOK_ACCOUNTS.map((a) => (
-                    <MenuItem key={a.value} value={a.value}>{a.label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Account"
+                value={getAccountFromMode(editPaymentForm.paymentMode)}
+                InputProps={{ readOnly: true }}
+              />
             </Grid>
             <Grid item xs={6}>
               <TextField
@@ -2613,6 +2606,7 @@ const AdmissionDetailsPage = () => {
                     setAgentPaymentForm({
                       ...agentPaymentForm,
                       paymentMode: e.target.value,
+                      account: getAccountFromMode(e.target.value),
                     })
                   }
                   label="Payment Mode"
