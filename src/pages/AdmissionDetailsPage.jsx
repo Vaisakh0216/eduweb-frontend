@@ -774,7 +774,7 @@ import {
 } from "../api/services";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency, formatDate } from "../utils/formatters";
-import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES, DAYBOOK_ACCOUNTS } from "../utils/constants";
+import { PAYER_TYPES, RECEIVER_TYPES, PAYMENT_MODES } from "../utils/constants";
 
 const AdmissionDetailsPage = () => {
   const { id } = useParams();
@@ -795,9 +795,13 @@ const AdmissionDetailsPage = () => {
   const [editPaymentDialog, setEditPaymentDialog] = useState(false);
   const [editPaymentId, setEditPaymentId] = useState(null);
   const [editPaymentForm, setEditPaymentForm] = useState({
+    payerType: 'Student', receiverType: 'Consultancy',
     amount: 0, paymentDate: new Date(), paymentMode: 'Cash', account: 'Cash',
     transactionRef: '', notes: '',
-    isServiceChargePayment: false, serviceChargeDeducted: 0, amountDueToCollege: 0,
+    isServiceChargePayment: false, deductServiceCharge: false,
+    serviceChargeDeducted: 0, amountDueToCollege: 0,
+    isAgentCollection: false, collectingAgentId: '',
+    isAgentFeePayment: false, agentIdForFeePayment: '',
     agentFeeDeducted: 0,
   });
   const [paymentDeleteDialog, setPaymentDeleteDialog] = useState({ open: false, id: null });
@@ -1021,16 +1025,24 @@ const AdmissionDetailsPage = () => {
 
   const openEditPaymentDialog = (p) => {
     setEditPaymentId(p._id);
+    const scDeducted = p.serviceChargeDeducted || 0;
     setEditPaymentForm({
+      payerType: p.payerType || 'Student',
+      receiverType: p.receiverType || 'Consultancy',
       amount: p.amount,
       paymentDate: p.paymentDate ? new Date(p.paymentDate) : new Date(),
-      paymentMode: p.paymentMode,
+      paymentMode: p.paymentMode || 'Cash',
       account: p.account || 'Cash',
       transactionRef: p.transactionRef || '',
       notes: p.notes || '',
       isServiceChargePayment: p.isServiceChargePayment || false,
-      serviceChargeDeducted: p.serviceChargeDeducted || 0,
+      deductServiceCharge: !p.isServiceChargePayment && scDeducted > 0,
+      serviceChargeDeducted: scDeducted,
       amountDueToCollege: p.amountDueToCollege || 0,
+      isAgentCollection: p.isAgentCollection || false,
+      collectingAgentId: p.collectingAgentId?._id || p.collectingAgentId || '',
+      isAgentFeePayment: p.isAgentFeePayment || false,
+      agentIdForFeePayment: p.agentIdForFeePayment?._id || p.agentIdForFeePayment || '',
       agentFeeDeducted: p.agentFeeDeducted || 0,
     });
     setEditPaymentDialog(true);
@@ -1061,15 +1073,29 @@ const AdmissionDetailsPage = () => {
     setSubmitting(true);
     try {
       const amt = parseFloat(editPaymentForm.amount);
+      const isStudentToCollege = editPaymentForm.payerType === 'Student' && editPaymentForm.receiverType === 'College';
+      const scDeducted = editPaymentForm.isServiceChargePayment || editPaymentForm.deductServiceCharge
+        ? parseFloat(editPaymentForm.serviceChargeDeducted) || 0
+        : 0;
       await paymentService.update(editPaymentId, {
+        payerType: editPaymentForm.payerType,
+        receiverType: editPaymentForm.receiverType,
         amount: amt,
         paymentDate: editPaymentForm.paymentDate,
-        paymentMode: editPaymentForm.paymentMode,
-        account: editPaymentForm.account || 'Cash',
+        ...(isStudentToCollege ? {} : {
+          paymentMode: editPaymentForm.paymentMode,
+          account: editPaymentForm.account || 'Cash',
+        }),
         transactionRef: editPaymentForm.transactionRef || null,
         notes: editPaymentForm.notes,
-        serviceChargeDeducted: editPaymentForm.serviceChargeDeducted || 0,
+        isServiceChargePayment: editPaymentForm.isServiceChargePayment,
+        deductServiceCharge: editPaymentForm.deductServiceCharge,
+        serviceChargeDeducted: scDeducted,
         amountDueToCollege: editPaymentForm.amountDueToCollege || 0,
+        isAgentCollection: editPaymentForm.isAgentCollection,
+        collectingAgentId: editPaymentForm.collectingAgentId || null,
+        isAgentFeePayment: editPaymentForm.isAgentFeePayment,
+        agentIdForFeePayment: editPaymentForm.agentIdForFeePayment || null,
         agentFeeDeducted: editPaymentForm.agentFeeDeducted || 0,
       });
       setEditPaymentDialog(false);
@@ -2514,10 +2540,59 @@ const AdmissionDetailsPage = () => {
         </DialogActions>
       </Dialog>
       {/* Edit Payment Dialog */}
-      <Dialog open={editPaymentDialog} onClose={() => setEditPaymentDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={editPaymentDialog} onClose={() => setEditPaymentDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>Edit Payment</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
+            {/* Payer / Receiver */}
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Payer</InputLabel>
+                <Select
+                  value={editPaymentForm.payerType}
+                  onChange={(e) => setEditPaymentForm({
+                    ...editPaymentForm,
+                    payerType: e.target.value,
+                    isServiceChargePayment: false,
+                    deductServiceCharge: false,
+                    serviceChargeDeducted: 0,
+                    isAgentCollection: false,
+                    collectingAgentId: '',
+                    isAgentFeePayment: false,
+                    agentIdForFeePayment: '',
+                  })}
+                  label="Payer"
+                >
+                  {PAYER_TYPES.map((t) => (
+                    <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Receiver</InputLabel>
+                <Select
+                  value={editPaymentForm.receiverType}
+                  onChange={(e) => setEditPaymentForm({
+                    ...editPaymentForm,
+                    receiverType: e.target.value,
+                    isServiceChargePayment: false,
+                    deductServiceCharge: false,
+                    serviceChargeDeducted: 0,
+                    isAgentCollection: false,
+                    isAgentFeePayment: false,
+                  })}
+                  label="Receiver"
+                >
+                  {RECEIVER_TYPES.map((t) => (
+                    <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Date / Amount */}
             <Grid item xs={6}>
               <DatePicker
                 label="Payment Date"
@@ -2536,32 +2611,39 @@ const AdmissionDetailsPage = () => {
                 onChange={(e) => handleEditAmountChange(e.target.value)}
               />
             </Grid>
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel>Payment Mode</InputLabel>
-                <Select
-                  value={editPaymentForm.paymentMode}
-                  onChange={(e) => setEditPaymentForm({
-                    ...editPaymentForm,
-                    paymentMode: e.target.value,
-                    account: getAccountFromMode(e.target.value),
-                  })}
-                  label="Payment Mode"
-                >
-                  {PAYMENT_MODES.map((m) => (
-                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Account"
-                value={getAccountFromMode(editPaymentForm.paymentMode)}
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
+
+            {/* Payment Mode / Account — hidden for Student→College */}
+            {!(editPaymentForm.payerType === 'Student' && editPaymentForm.receiverType === 'College') && (
+              <>
+                <Grid item xs={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Payment Mode</InputLabel>
+                    <Select
+                      value={editPaymentForm.paymentMode}
+                      onChange={(e) => setEditPaymentForm({
+                        ...editPaymentForm,
+                        paymentMode: e.target.value,
+                        account: getAccountFromMode(e.target.value),
+                      })}
+                      label="Payment Mode"
+                    >
+                      {PAYMENT_MODES.map((m) => (
+                        <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Account"
+                    value={getAccountFromMode(editPaymentForm.paymentMode)}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+              </>
+            )}
+
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -2581,67 +2663,129 @@ const AdmissionDetailsPage = () => {
               />
             </Grid>
 
-            {/* Service Charge section — shown only when this payment has SC involvement */}
-            {!isStaff && (editPaymentForm.isServiceChargePayment || editPaymentForm.serviceChargeDeducted > 0) && (
+            {/* Consultancy → Agent: Pay Agent Fee */}
+            {editPaymentForm.payerType === 'Consultancy' && editPaymentForm.receiverType === 'Agent' && (
               <>
                 <Grid item xs={12}>
-                  <Box sx={{ p: 1.5, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200', borderRadius: 1 }}>
-                    <Typography variant="body2" color="primary.main" fontWeight="medium" sx={{ mb: 1 }}>
-                      Service Charge
+                  <Box sx={{ p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+                    <Typography variant="body2" color="info.contrastText">
+                      <strong>Agent Fee Payment:</strong> Paying agent fee from consultancy
                     </Typography>
-                    {editPaymentForm.isServiceChargePayment ? (
-                      <Typography variant="body2" color="text.secondary">
-                        This is a <strong>Service Charge Only</strong> payment — the full amount is consultancy income.
-                        SC automatically matches the amount.
-                      </Typography>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        This payment has a <strong>mixed</strong> breakdown (part SC, part college fee).
-                        Adjust the SC amount below; college due is calculated automatically.
-                      </Typography>
-                    )}
                   </Box>
                 </Grid>
-
-                {!editPaymentForm.isServiceChargePayment && (
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label="SC Deducted"
-                      type="number"
-                      value={editPaymentForm.serviceChargeDeducted || ''}
-                      onChange={(e) => handleEditScChange(e.target.value)}
-                      inputProps={{ min: 0, max: parseFloat(editPaymentForm.amount) || 0 }}
-                      helperText={`Max: ${formatCurrency(parseFloat(editPaymentForm.amount) || 0)}`}
-                    />
-                  </Grid>
-                )}
-
-                <Grid item xs={editPaymentForm.isServiceChargePayment ? 12 : 6}>
-                  <Box sx={{ p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
-                    <Typography variant="caption" color="text.secondary">Breakdown</Typography>
-                    <Typography variant="body2">
-                      SC: <strong>{formatCurrency(editPaymentForm.serviceChargeDeducted || 0)}</strong>
-                      {' · '}
-                      Due to College: <strong>{formatCurrency(editPaymentForm.amountDueToCollege || 0)}</strong>
-                    </Typography>
-                  </Box>
+                <Grid item xs={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Pay to Agent</InputLabel>
+                    <Select
+                      value={editPaymentForm.agentIdForFeePayment}
+                      onChange={(e) => setEditPaymentForm({
+                        ...editPaymentForm,
+                        agentIdForFeePayment: e.target.value,
+                        isAgentFeePayment: true,
+                      })}
+                      label="Pay to Agent"
+                    >
+                      <MenuItem value="">Select Agent</MenuItem>
+                      {getAdmissionAgents().map((a) => (
+                        <MenuItem key={a._id} value={a._id}>
+                          {a.name} ({a.agentType}) - Fee: {formatCurrency(a.agentFee)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Grid>
               </>
             )}
 
-            {/* Agent Fee section */}
-            {!isStaff && editPaymentForm.agentFeeDeducted > 0 && (
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Agent Fee Deducted"
-                  type="number"
-                  value={editPaymentForm.agentFeeDeducted || ''}
-                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, agentFeeDeducted: parseFloat(e.target.value) || 0 })}
-                  inputProps={{ min: 0 }}
-                />
+            {/* College → Consultancy: Payment Type (fee vs SC) */}
+            {editPaymentForm.payerType === 'College' && editPaymentForm.receiverType === 'Consultancy' && !isStaff && (
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Payment Type</InputLabel>
+                  <Select
+                    value={editPaymentForm.isServiceChargePayment ? 'sc' : 'fee'}
+                    onChange={(e) => {
+                      const isSC = e.target.value === 'sc';
+                      setEditPaymentForm({
+                        ...editPaymentForm,
+                        isServiceChargePayment: isSC,
+                        serviceChargeDeducted: isSC ? parseFloat(editPaymentForm.amount) || 0 : 0,
+                        amountDueToCollege: isSC ? 0 : parseFloat(editPaymentForm.amount) || 0,
+                      });
+                    }}
+                    label="Payment Type"
+                  >
+                    <MenuItem value="fee">College Fee (regular payment)</MenuItem>
+                    <MenuItem value="sc">Service Charge from College</MenuItem>
+                  </Select>
+                </FormControl>
               </Grid>
+            )}
+
+            {/* Student/Agent → Consultancy: SC options */}
+            {((editPaymentForm.payerType === 'Student' && editPaymentForm.receiverType === 'Consultancy') ||
+              (editPaymentForm.payerType === 'Agent' && editPaymentForm.receiverType === 'Consultancy')) && !isStaff && (
+              <>
+                <Grid item xs={12}>
+                  <Box sx={{ p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+                    <Typography variant="body2" color="info.contrastText">
+                      <strong>Service Charge Due:</strong> {formatCurrency(data?.admission?.serviceCharge?.due || 0)}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Payment Type</InputLabel>
+                    <Select
+                      value={
+                        editPaymentForm.isServiceChargePayment ? 'sc_only'
+                          : editPaymentForm.deductServiceCharge ? 'partial_sc'
+                          : 'college_only'
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const amt = parseFloat(editPaymentForm.amount) || 0;
+                        if (val === 'sc_only') {
+                          setEditPaymentForm({ ...editPaymentForm, isServiceChargePayment: true, deductServiceCharge: false, serviceChargeDeducted: amt, amountDueToCollege: 0 });
+                        } else if (val === 'partial_sc') {
+                          setEditPaymentForm({ ...editPaymentForm, isServiceChargePayment: false, deductServiceCharge: true, serviceChargeDeducted: Math.min(data?.admission?.serviceCharge?.due || 0, amt), amountDueToCollege: amt - Math.min(data?.admission?.serviceCharge?.due || 0, amt) });
+                        } else {
+                          setEditPaymentForm({ ...editPaymentForm, isServiceChargePayment: false, deductServiceCharge: false, serviceChargeDeducted: 0, amountDueToCollege: amt });
+                        }
+                      }}
+                      label="Payment Type"
+                    >
+                      <MenuItem value="college_only">College Fee Only - Full amount due to college</MenuItem>
+                      <MenuItem value="sc_only">Service Charge Only - Consultancy keeps full amount</MenuItem>
+                      <MenuItem value="partial_sc">Mixed - Specify SC amount to deduct</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                {editPaymentForm.deductServiceCharge && !editPaymentForm.isServiceChargePayment && (
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Service Charge to Deduct"
+                      type="number"
+                      value={editPaymentForm.serviceChargeDeducted || ''}
+                      onChange={(e) => handleEditScChange(e.target.value)}
+                      helperText={`Max: ${formatCurrency(parseFloat(editPaymentForm.amount) || 0)}`}
+                    />
+                  </Grid>
+                )}
+                <Grid item xs={12}>
+                  <Box sx={{ p: 1, bgcolor: 'grey.100', borderRadius: 1 }}>
+                    <Typography variant="body2">
+                      <strong>Summary:</strong>
+                      {editPaymentForm.isServiceChargePayment
+                        ? ` Full amount (${formatCurrency(parseFloat(editPaymentForm.amount) || 0)}) is Service Charge`
+                        : editPaymentForm.deductServiceCharge
+                        ? ` SC: ${formatCurrency(editPaymentForm.serviceChargeDeducted || 0)}, Due to College: ${formatCurrency(editPaymentForm.amountDueToCollege || 0)}`
+                        : ` Full amount (${formatCurrency(parseFloat(editPaymentForm.amount) || 0)}) due to College`}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </>
             )}
           </Grid>
         </DialogContent>
