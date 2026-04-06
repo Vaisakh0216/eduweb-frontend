@@ -1073,7 +1073,6 @@ const AdmissionDetailsPage = () => {
     setSubmitting(true);
     try {
       const amt = parseFloat(editPaymentForm.amount);
-      const isStudentToCollege = editPaymentForm.payerType === 'Student' && editPaymentForm.receiverType === 'College';
       const scDeducted = editPaymentForm.isServiceChargePayment || editPaymentForm.deductServiceCharge
         ? parseFloat(editPaymentForm.serviceChargeDeducted) || 0
         : 0;
@@ -1082,10 +1081,8 @@ const AdmissionDetailsPage = () => {
         receiverType: editPaymentForm.receiverType,
         amount: amt,
         paymentDate: editPaymentForm.paymentDate,
-        ...(isStudentToCollege ? {} : {
-          paymentMode: editPaymentForm.paymentMode,
-          account: editPaymentForm.account || 'Cash',
-        }),
+        paymentMode: editPaymentForm.paymentMode || 'Cash',
+        account: editPaymentForm.account || getAccountFromMode(editPaymentForm.paymentMode),
         transactionRef: editPaymentForm.transactionRef || null,
         notes: editPaymentForm.notes,
         isServiceChargePayment: editPaymentForm.isServiceChargePayment,
@@ -2612,37 +2609,39 @@ const AdmissionDetailsPage = () => {
               />
             </Grid>
 
-            {/* Payment Mode / Account — hidden for Student→College */}
-            {!(editPaymentForm.payerType === 'Student' && editPaymentForm.receiverType === 'College') && (
-              <>
-                <Grid item xs={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Payment Mode</InputLabel>
-                    <Select
-                      value={editPaymentForm.paymentMode}
-                      onChange={(e) => setEditPaymentForm({
-                        ...editPaymentForm,
-                        paymentMode: e.target.value,
-                        account: getAccountFromMode(e.target.value),
-                      })}
-                      label="Payment Mode"
-                    >
-                      {PAYMENT_MODES.map((m) => (
-                        <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    label="Account"
-                    value={getAccountFromMode(editPaymentForm.paymentMode)}
-                    InputProps={{ readOnly: true }}
-                  />
-                </Grid>
-              </>
-            )}
+            {/* Payment Mode */}
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Payment Mode</InputLabel>
+                <Select
+                  value={editPaymentForm.paymentMode}
+                  onChange={(e) => setEditPaymentForm({
+                    ...editPaymentForm,
+                    paymentMode: e.target.value,
+                    account: getAccountFromMode(e.target.value),
+                  })}
+                  label="Payment Mode"
+                >
+                  {PAYMENT_MODES.map((m) => (
+                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            {/* Account — auto-populated from mode but manually overridable */}
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel>Account</InputLabel>
+                <Select
+                  value={editPaymentForm.account || getAccountFromMode(editPaymentForm.paymentMode)}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, account: e.target.value })}
+                  label="Account"
+                >
+                  <MenuItem value="Cash">Cash</MenuItem>
+                  <MenuItem value="Bank">Bank</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
             <Grid item xs={6}>
               <TextField

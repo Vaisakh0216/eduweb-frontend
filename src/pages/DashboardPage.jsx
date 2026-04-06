@@ -12,6 +12,13 @@ import {
   CircularProgress,
   Chip,
   Divider,
+  Collapse,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  IconButton,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
@@ -24,6 +31,9 @@ import {
   Pending,
   Cancel,
   LocationOn,
+  ExpandMore,
+  ExpandLess,
+  AccountBalanceWallet,
 } from "@mui/icons-material";
 import {
   LineChart,
@@ -52,6 +62,7 @@ const DashboardPage = () => {
   const { user, isSuperAdmin, isStaff } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
+  const [expandedLoanSource, setExpandedLoanSource] = useState(null);
   const [monthlyTrend, setMonthlyTrend] = useState([]);
   const [admissionTrend, setAdmissionTrend] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -653,6 +664,162 @@ const DashboardPage = () => {
               />
             </Grid>
           </Grid>
+
+          {/* Loans & Capital */}
+          <Box sx={{ mb: 1 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              fontWeight="bold"
+              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+            >
+              Loans & Capital
+            </Typography>
+          </Box>
+          <Grid container spacing={3} sx={{ mb: 2 }}>
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ border: "1px solid", borderColor: "warning.200" }}>
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Total Loans Taken
+                  </Typography>
+                  <Typography variant="h5" fontWeight="bold" color="warning.main">
+                    {formatCurrency(stats?.loans?.totalTaken || 0)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ border: "1px solid", borderColor: "success.200" }}>
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Total Repaid
+                  </Typography>
+                  <Typography variant="h5" fontWeight="bold" color="success.main">
+                    {formatCurrency(stats?.loans?.totalRepaid || 0)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ border: "1px solid", borderColor: (stats?.loans?.outstanding || 0) > 0 ? "error.200" : "success.200" }}>
+                <CardContent>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Outstanding Balance
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    color={(stats?.loans?.outstanding || 0) > 0 ? "error.main" : "success.main"}
+                  >
+                    {formatCurrency(stats?.loans?.outstanding || 0)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+
+          {/* Loan source breakdown */}
+          {stats?.loans?.sources?.length > 0 && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent sx={{ pb: "12px !important" }}>
+                <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1.5 }}>
+                  Loan / Capital Breakdown
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: "grey.50" }}>
+                      <TableCell sx={{ fontWeight: 600 }}>Source</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>Taken</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>Repaid</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>Outstanding</TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 600 }}>Details</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {stats.loans.sources.map((source) => (
+                      <>
+                        <TableRow
+                          key={source.label}
+                          sx={{ cursor: source.entries?.length > 0 ? "pointer" : "default", "&:hover": { bgcolor: "grey.50" } }}
+                          onClick={() => source.entries?.length > 0 && setExpandedLoanSource(
+                            expandedLoanSource === source.label ? null : source.label
+                          )}
+                        >
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={500}>{source.label}</Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" color="warning.main">{formatCurrency(source.taken)}</Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" color="success.main">{formatCurrency(source.repaid)}</Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" color={source.outstanding > 0 ? "error.main" : "success.main"} fontWeight={600}>
+                              {formatCurrency(source.outstanding)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="center">
+                            {source.entries?.length > 0 && (
+                              <IconButton size="small">
+                                {expandedLoanSource === source.label ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+                              </IconButton>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                        {expandedLoanSource === source.label && (
+                          <TableRow key={`${source.label}-detail`}>
+                            <TableCell colSpan={5} sx={{ p: 0 }}>
+                              <Collapse in={expandedLoanSource === source.label}>
+                                <Box sx={{ bgcolor: "grey.50", px: 3, py: 1 }}>
+                                  <Table size="small">
+                                    <TableHead>
+                                      <TableRow>
+                                        <TableCell sx={{ color: "text.secondary", fontSize: "0.75rem" }}>Date</TableCell>
+                                        <TableCell sx={{ color: "text.secondary", fontSize: "0.75rem" }}>Description</TableCell>
+                                        <TableCell sx={{ color: "text.secondary", fontSize: "0.75rem" }}>Account</TableCell>
+                                        <TableCell align="right" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>Amount</TableCell>
+                                        <TableCell sx={{ color: "text.secondary", fontSize: "0.75rem" }}>Type</TableCell>
+                                      </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                      {source.entries.map((entry) => (
+                                        <TableRow key={entry._id}>
+                                          <TableCell sx={{ fontSize: "0.8rem" }}>
+                                            {new Date(entry.date).toLocaleDateString("en-IN")}
+                                          </TableCell>
+                                          <TableCell sx={{ fontSize: "0.8rem" }}>
+                                            {entry.description || entry.paidTo || "—"}
+                                          </TableCell>
+                                          <TableCell sx={{ fontSize: "0.8rem" }}>{entry.account}</TableCell>
+                                          <TableCell align="right" sx={{ fontSize: "0.8rem" }}>
+                                            {formatCurrency(entry.amount)}
+                                          </TableCell>
+                                          <TableCell>
+                                            <Chip
+                                              label={entry.type === "taken" ? "Taken" : "Repaid"}
+                                              size="small"
+                                              color={entry.type === "taken" ? "warning" : "success"}
+                                              sx={{ fontSize: "0.7rem" }}
+                                            />
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </Box>
+                              </Collapse>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
 

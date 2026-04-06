@@ -712,6 +712,7 @@ import { formatCurrency, formatDate } from "../utils/formatters";
 import {
   DAYBOOK_TRANSACTION_TYPES,
   DAYBOOK_EXPENSE_CATEGORY_GROUPS,
+  DAYBOOK_RECEIPT_CATEGORY_GROUPS,
   DAYBOOK_ACCOUNTS,
   DAYBOOK_CATEGORIES,
 } from "../utils/constants";
@@ -1544,7 +1545,7 @@ const DaybookPage = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={formData.transactionType === "expense" ? 6 : 12}>
+            <Grid item xs={(formData.transactionType === "expense" || formData.transactionType === "income") ? 6 : 12}>
               <FormControl fullWidth>
                 <InputLabel>Transaction Type</InputLabel>
                 <Select
@@ -1581,6 +1582,37 @@ const DaybookPage = () => {
                     label="Expense Category"
                   >
                     {DAYBOOK_EXPENSE_CATEGORY_GROUPS.map((group) => [
+                      <ListSubheader key={group.group}>
+                        {group.group}
+                      </ListSubheader>,
+                      ...group.items.map((item) => (
+                        <MenuItem
+                          key={item.value}
+                          value={item.value}
+                          sx={{ pl: 3 }}
+                        >
+                          {item.label}
+                        </MenuItem>
+                      )),
+                    ])}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+
+            {formData.transactionType === "income" && (
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Receipt Category</InputLabel>
+                  <Select
+                    value={formData.category}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
+                    }
+                    label="Receipt Category"
+                  >
+                    <MenuItem value="">— General Receipt —</MenuItem>
+                    {DAYBOOK_RECEIPT_CATEGORY_GROUPS.map((group) => [
                       <ListSubheader key={group.group}>
                         {group.group}
                       </ListSubheader>,

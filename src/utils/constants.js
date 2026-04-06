@@ -137,6 +137,16 @@ export const DAYBOOK_CATEGORIES = [
   { value: 'sub_agent_commission', label: 'Sub Agent Commission' },
   { value: 'donation', label: 'Donation' },
   { value: 'investment', label: 'Investment' },
+  { value: 'capital_owner', label: 'Owner Contribution' },
+  { value: 'capital_partner', label: 'Partner Contribution' },
+  { value: 'loan_from_owner', label: 'Loan from Owner' },
+  { value: 'loan_from_others', label: 'Loan from Others' },
+  { value: 'loan_from_bank', label: 'Loan from Bank' },
+  { value: 'loan_repayment_owner', label: 'Loan Repayment to Owner' },
+  { value: 'loan_repayment_others', label: 'Loan Repayment to Others' },
+  { value: 'loan_repayment_bank', label: 'Loan Repayment to Bank' },
+  { value: 'capital_withdrawal_owner', label: 'Owner Withdrawal' },
+  { value: 'capital_withdrawal_partner', label: 'Partner Withdrawal' },
 ];
 
 export const DAYBOOK_EXPENSE_CATEGORY_GROUPS = [
@@ -178,12 +188,40 @@ export const DAYBOOK_EXPENSE_CATEGORY_GROUPS = [
     ],
   },
   {
+    group: 'Loan Repayment',
+    items: [
+      { value: 'loan_repayment_owner', label: 'Loan Repayment to Owner' },
+      { value: 'loan_repayment_others', label: 'Loan Repayment to Others' },
+      { value: 'loan_repayment_bank', label: 'Loan Repayment to Bank' },
+      { value: 'capital_withdrawal_owner', label: 'Owner Withdrawal' },
+      { value: 'capital_withdrawal_partner', label: 'Partner Withdrawal' },
+    ],
+  },
+  {
     group: 'Other',
     items: [
       { value: 'paid_to_college', label: 'Paid to College' },
       { value: 'donation', label: 'Donation' },
       { value: 'investment', label: 'Investment' },
       { value: 'misc', label: 'Miscellaneous' },
+    ],
+  },
+];
+
+export const DAYBOOK_RECEIPT_CATEGORY_GROUPS = [
+  {
+    group: 'Capital',
+    items: [
+      { value: 'capital_owner', label: 'Owner Contribution' },
+      { value: 'capital_partner', label: 'Partner Contribution' },
+    ],
+  },
+  {
+    group: 'Loan',
+    items: [
+      { value: 'loan_from_owner', label: 'Loan from Owner' },
+      { value: 'loan_from_others', label: 'Loan from Others' },
+      { value: 'loan_from_bank', label: 'Loan from Bank' },
     ],
   },
 ];
