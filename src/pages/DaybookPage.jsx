@@ -1411,6 +1411,36 @@ const DaybookPage = () => {
               </CardContent>
             </Card>
           </Grid>
+          <Grid item xs={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Opening Balance
+                </Typography>
+                <Typography
+                  variant="h5"
+                  color={summary.openingBalance >= 0 ? "primary.main" : "error.main"}
+                >
+                  {formatCurrency(summary.openingBalance)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="body2" color="text.secondary">
+                  Closing Balance
+                </Typography>
+                <Typography
+                  variant="h5"
+                  color={summary.closingBalance >= 0 ? "success.main" : "error.main"}
+                >
+                  {formatCurrency(summary.closingBalance)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
       )}
 

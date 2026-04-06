@@ -628,7 +628,7 @@ const DashboardPage = () => {
 
           {/* Cash positions */}
           <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <StatCard
                 title="Cash in Hand"
                 value={formatCurrency(stats?.cashInHand || 0)}
@@ -636,12 +636,20 @@ const DashboardPage = () => {
                 color="info"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <StatCard
                 title="Cash in Bank"
                 value={formatCurrency(stats?.cashInBank || 0)}
                 icon={<AccountBalance />}
                 color="secondary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                title="Total Closing Balance"
+                value={formatCurrency((stats?.cashInHand || 0) + (stats?.cashInBank || 0))}
+                icon={<AccountBalance />}
+                color="success"
               />
             </Grid>
           </Grid>
