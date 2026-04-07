@@ -110,6 +110,7 @@ export const DAYBOOK_TRANSACTION_TYPES = [
   { value: 'expense', label: 'Payment' },
   { value: 'transfer', label: 'Transfer' },
   { value: 'asset', label: 'Journal' },
+  { value: 'internal_transfer', label: 'Internal Transfer' },
 ];
 
 export const DAYBOOK_CATEGORIES = [
@@ -147,6 +148,7 @@ export const DAYBOOK_CATEGORIES = [
   { value: 'loan_repayment_bank', label: 'Loan Repayment to Bank' },
   { value: 'capital_withdrawal_owner', label: 'Owner Withdrawal' },
   { value: 'capital_withdrawal_partner', label: 'Partner Withdrawal' },
+  { value: 'internal_transfer', label: 'Internal Transfer' },
 ];
 
 export const DAYBOOK_EXPENSE_CATEGORY_GROUPS = [

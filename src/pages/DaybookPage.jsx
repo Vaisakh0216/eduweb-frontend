@@ -768,6 +768,8 @@ const DaybookPage = () => {
     transactionRef: "",
     paidTo: "",
     date: new Date(),
+    transferFrom: "Cash",
+    transferTo: "Bank",
   });
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
@@ -810,10 +812,14 @@ const DaybookPage = () => {
         params.startDate = params.startDate.toISOString();
       if (params.endDate instanceof Date)
         params.endDate = params.endDate.toISOString();
-      // Opening Balance is filtered by category, not transactionType
+      // Opening Balance & Internal Transfer are filtered by category, not transactionType
       if (params.transactionType === "opening_balance") {
         delete params.transactionType;
         params.category = "opening_balance";
+      }
+      if (params.transactionType === "internal_transfer") {
+        delete params.transactionType;
+        params.category = "internal_transfer";
       }
       const res = await daybookService.getAll(params);
       setEntries(res.data.data);
@@ -862,11 +868,25 @@ const DaybookPage = () => {
 
   const handleSave = async () => {
     try {
+      let payload = { ...formData };
+
+      // Convert UI-level internal_transfer to backend fields
+      if (formData.transactionType === "internal_transfer") {
+        const cashToBank = formData.transferFrom === "Cash";
+        payload = {
+          ...formData,
+          category: "internal_transfer",
+          account: "Bank",
+          transactionType: cashToBank ? "income" : "expense",
+          description: formData.description || (cashToBank ? "Cash to Bank Transfer" : "Bank to Cash Transfer"),
+        };
+      }
+
       let entry;
       if (editEntry) {
-        entry = await daybookService.update(editEntry._id, formData);
+        entry = await daybookService.update(editEntry._id, payload);
       } else {
-        entry = await daybookService.create(formData);
+        entry = await daybookService.create(payload);
       }
 
       // Upload attachment if selected
@@ -1107,6 +1127,10 @@ const DaybookPage = () => {
         if (isOpeningBalance(row)) {
           if (account === "bank") bankBal += amt;
           else cashBal += amt; // cash / petty cash / unspecified
+        } else if (row.category === "internal_transfer") {
+          // income (cash→bank): bank+, cash-   |   expense (bank→cash): bank-, cash+
+          if (type === "income") { bankBal += amt; cashBal -= amt; }
+          else { bankBal -= amt; cashBal += amt; }
         } else if (type === "income") {
           if (account === "bank") bankBal += amt;
           else if (account === "cash" || account === "petty cash")
@@ -1149,6 +1173,7 @@ const DaybookPage = () => {
       minWidth: 110,
       renderCell: (row) => {
         if (row.category === "opening_balance") return "Opening Balance";
+        if (row.category === "internal_transfer") return "Internal Transfer";
         const map = {
           income: "Receipt",
           expense: "Payment",
@@ -1545,7 +1570,7 @@ const DaybookPage = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={(formData.transactionType === "expense" || formData.transactionType === "income") ? 6 : 12}>
+            <Grid item xs={(formData.transactionType === "expense" || formData.transactionType === "income" || formData.transactionType === "internal_transfer") ? 6 : 12}>
               <FormControl fullWidth>
                 <InputLabel>Transaction Type</InputLabel>
                 <Select
@@ -1630,6 +1655,40 @@ const DaybookPage = () => {
                 </FormControl>
               </Grid>
             )}
+
+            {formData.transactionType === "internal_transfer" && (
+              <>
+                <Grid item xs={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>From Account</InputLabel>
+                    <Select
+                      value={formData.transferFrom}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          transferFrom: e.target.value,
+                          transferTo: e.target.value === "Cash" ? "Bank" : "Cash",
+                        })
+                      }
+                      label="From Account"
+                    >
+                      <MenuItem value="Cash">Cash</MenuItem>
+                      <MenuItem value="Bank">Bank</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="To Account"
+                    value={formData.transferFrom === "Cash" ? "Bank" : "Cash"}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {formData.transactionType !== "internal_transfer" && (
             <Grid item xs={6}>
               <FormControl fullWidth>
                 <InputLabel>Account</InputLabel>
@@ -1648,6 +1707,7 @@ const DaybookPage = () => {
                 </Select>
               </FormControl>
             </Grid>
+            )}
             <Grid item xs={6}>
               <FormControl fullWidth>
                 <InputLabel>Payment Month</InputLabel>
