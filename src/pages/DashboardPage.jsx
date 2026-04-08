@@ -823,6 +823,27 @@ const DashboardPage = () => {
         </>
       )}
 
+      {/* College Bonus — super admin only */}
+      {isSuperAdmin && stats?.bonus && (
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ border: "1px solid", borderColor: "secondary.200" }}>
+              <CardContent>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Total College Bonus
+                </Typography>
+                <Typography variant="h5" fontWeight="bold" color="secondary.main">
+                  {formatCurrency(stats.bonus.total || 0)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {stats.bonus.count} admission{stats.bonus.count !== 1 ? "s" : ""} · Not in P&L or cash
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
       {/* Admission Stats */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={6} md={3}>

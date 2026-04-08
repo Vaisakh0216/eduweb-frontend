@@ -816,6 +816,9 @@ const AdmissionDetailsPage = () => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [bonusForm, setBonusForm] = useState({ amount: 0, notes: "" });
+  const [bonusEditing, setBonusEditing] = useState(false);
+  const [bonusSaving, setBonusSaving] = useState(false);
 
   const getAccountFromMode = (mode) => (mode === 'Cash' ? 'Cash' : 'Bank');
 
@@ -858,6 +861,9 @@ const AdmissionDetailsPage = () => {
       setLoading(true);
       const response = await admissionService.getDetails(id);
       setData(response.data.data);
+      const adm = response.data.data?.admission;
+      setBonusForm({ amount: adm?.bonus?.amount || 0, notes: adm?.bonus?.notes || "" });
+      setBonusEditing(false);
     } catch (error) {
       console.error("Error fetching admission details:", error);
     } finally {
@@ -892,6 +898,18 @@ const AdmissionDetailsPage = () => {
       console.error("Error adding comment:", e);
     } finally {
       setCommentSubmitting(false);
+    }
+  };
+
+  const handleSaveBonus = async () => {
+    setBonusSaving(true);
+    try {
+      await admissionService.updateBonus(id, { amount: parseFloat(bonusForm.amount) || 0, notes: bonusForm.notes });
+      await fetchAdmissionDetails();
+    } catch (e) {
+      console.error("Error saving bonus:", e);
+    } finally {
+      setBonusSaving(false);
     }
   };
 
@@ -1487,6 +1505,14 @@ const AdmissionDetailsPage = () => {
                       {formatCurrency(admission.collegePayment?.paidToCollege)}
                     </Typography>
                   </div>
+                  {isSuperAdmin && (admission?.bonus?.amount > 0) && (
+                    <div>
+                      <span>College Bonus:</span>
+                      <Typography color="secondary.main">
+                        -{formatCurrency(admission.bonus.amount)}
+                      </Typography>
+                    </div>
+                  )}
                   <div>
                     <span>Balance Due:</span>
                     <Typography color="error.main">
@@ -1630,6 +1656,78 @@ const AdmissionDetailsPage = () => {
                     </Typography>
                   </div>
                 </Box>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* College Bonus — super admin only */}
+          {isSuperAdmin && (
+            <Card sx={{ mb: 2 }}>
+              <CardContent>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                  <Typography variant="h6">College Bonus</Typography>
+                  {!bonusEditing && (
+                    <IconButton size="small" onClick={() => setBonusEditing(true)}>
+                      <Edit fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+                {bonusEditing ? (
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    <TextField
+                      size="small"
+                      label="Bonus Amount"
+                      type="number"
+                      value={bonusForm.amount}
+                      onChange={(e) => setBonusForm((f) => ({ ...f, amount: parseFloat(e.target.value) || 0 }))}
+                      inputProps={{ min: 0 }}
+                      fullWidth
+                    />
+                    <TextField
+                      size="small"
+                      label="Notes"
+                      value={bonusForm.notes}
+                      onChange={(e) => setBonusForm((f) => ({ ...f, notes: e.target.value }))}
+                      placeholder="e.g. College offset / paid separately"
+                      fullWidth
+                    />
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={handleSaveBonus}
+                        disabled={bonusSaving}
+                      >
+                        {bonusSaving ? "Saving..." : "Save"}
+                      </Button>
+                      <Button size="small" onClick={() => setBonusEditing(false)}>
+                        Cancel
+                      </Button>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box sx={{ "& > div": { display: "flex", justifyContent: "space-between", mb: 1 } }}>
+                    <div>
+                      <span>Bonus Amount:</span>
+                      <Typography color="secondary.main" fontWeight={600}>
+                        {formatCurrency(data?.admission?.bonus?.amount || 0)}
+                      </Typography>
+                    </div>
+                    {data?.admission?.bonus?.notes && (
+                      <div>
+                        <span>Notes:</span>
+                        <Typography variant="body2" color="text.secondary">
+                          {data.admission.bonus.notes}
+                        </Typography>
+                      </div>
+                    )}
+                    <div>
+                      <Typography variant="caption" color="text.secondary">
+                        Not counted in P&L or cash. Offsets balance due to college.
+                      </Typography>
+                    </div>
+                  </Box>
+                )}
               </CardContent>
             </Card>
           )}

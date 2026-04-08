@@ -75,6 +75,7 @@ export const admissionService = {
   getComments: (id) => api.get(`/admissions/${id}/comments`),
   addComment: (id, data) => api.post(`/admissions/${id}/comments`, data),
   deleteComment: (id, commentId) => api.delete(`/admissions/${id}/comments/${commentId}`),
+  updateBonus: (id, data) => api.patch(`/admissions/${id}/bonus`, data),
 };
 
 // Payments

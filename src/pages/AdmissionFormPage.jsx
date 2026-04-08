@@ -42,6 +42,7 @@ const AdmissionFormPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isStaff, user } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin';
   const isEdit = !!id;
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -97,6 +98,8 @@ const AdmissionFormPage = () => {
       hostelFeeYear4: 0,
     },
     serviceCharge: { agreed: 0 },
+    bonusAmount: 0,
+    bonusNotes: "",
     notes: "",
   });
 
@@ -162,6 +165,8 @@ const AdmissionFormPage = () => {
             agentFee: adm.agents?.subAgent?.agentFee || 0,
           },
         },
+        bonusAmount: adm.bonus?.amount || 0,
+        bonusNotes: adm.bonus?.notes || "",
       });
       if (adm.collegeId?._id) fetchCourses(adm.collegeId._id);
     } catch (e) {
@@ -207,10 +212,19 @@ const AdmissionFormPage = () => {
           },
         },
       };
+      let savedId = id;
       if (isEdit) {
         await admissionService.update(id, payload);
       } else {
-        await admissionService.create(payload);
+        const res = await admissionService.create(payload);
+        savedId = res.data.data._id;
+      }
+      // Save bonus separately (super admin only, via dedicated endpoint)
+      if (isSuperAdmin && (formData.bonusAmount > 0 || formData.bonusNotes)) {
+        await admissionService.updateBonus(savedId, {
+          amount: parseFloat(formData.bonusAmount) || 0,
+          notes: formData.bonusNotes || "",
+        });
       }
       navigate("/admissions");
     } catch (e) {
@@ -812,6 +826,45 @@ const AdmissionFormPage = () => {
                     }))
                   }
                 />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* College Bonus — super admin only */}
+          {isSuperAdmin && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600 }}>
+                  College Bonus
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label="Bonus Amount"
+                      type="number"
+                      value={formData.bonusAmount}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, bonusAmount: parseFloat(e.target.value) || 0 }))
+                      }
+                      inputProps={{ min: 0 }}
+                      helperText="Offsets balance due to college"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={8}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label="Bonus Notes"
+                      value={formData.bonusNotes}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, bonusNotes: e.target.value }))
+                      }
+                      placeholder="e.g. College offset / paid separately"
+                    />
+                  </Grid>
+                </Grid>
               </CardContent>
             </Card>
           )}
