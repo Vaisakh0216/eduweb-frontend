@@ -1509,7 +1509,7 @@ const AdmissionDetailsPage = () => {
                     <div>
                       <span>College Bonus:</span>
                       <Typography color="secondary.main">
-                        -{formatCurrency(admission.bonus.amount)}
+                        {formatCurrency(admission.bonus.amount)}
                       </Typography>
                     </div>
                   )}
