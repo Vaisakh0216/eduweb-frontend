@@ -17,6 +17,13 @@ export const userService = {
   update: (id, data) => api.put(`/users/${id}`, data),
   toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
   delete: (id) => api.delete(`/users/${id}`),
+  getAdminProfitSummaries: () => api.get('/users/admin-profit-summaries'),
+  updateProfitShare: (id, data) => api.patch(`/users/${id}/profit-share`, data),
+  makeProfitPayment: (id, data) => api.post(`/users/${id}/profit-payment`, data),
+  getProfitSummary: (id) => api.get(`/users/${id}/profit-summary`),
+  getProfitPayments: (id) => api.get(`/users/${id}/profit-payments`),
+  updateProfitPayment: (paymentId, data) => api.put(`/users/profit-payment/${paymentId}`, data),
+  deleteProfitPayment: (paymentId) => api.delete(`/users/profit-payment/${paymentId}`),
 };
 
 // Branches
