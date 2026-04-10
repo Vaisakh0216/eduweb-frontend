@@ -149,6 +149,7 @@ export const DAYBOOK_CATEGORIES = [
   { value: 'capital_withdrawal_owner', label: 'Owner Withdrawal' },
   { value: 'capital_withdrawal_partner', label: 'Partner Withdrawal' },
   { value: 'internal_transfer', label: 'Internal Transfer' },
+  { value: 'profit_share_payment', label: 'Profit Share Payment' },
 ];
 
 export const DAYBOOK_EXPENSE_CATEGORY_GROUPS = [

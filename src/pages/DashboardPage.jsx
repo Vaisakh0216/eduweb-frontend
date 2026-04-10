@@ -960,38 +960,85 @@ const DashboardPage = () => {
       )}
 
       {/* Profit Share — admin only */}
-      {user?.role === 'admin' && stats?.profitShare && stats.profitShare.percentage > 0 && (
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>My Profit Share</Typography>
+      {user?.role === "admin" &&
+        stats?.profitShare &&
+        stats.profitShare.percentage > 0 && (
+          <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                My Profit Share
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ border: "1px solid", borderColor: "success.300" }}>
+                <CardContent>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
+                    Total Earned ({stats.profitShare.percentage}%)
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    color="success.main"
+                  >
+                    {formatCurrency(stats.profitShare.earned)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ border: "1px solid", borderColor: "primary.200" }}>
+                <CardContent>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
+                    Total Paid
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    color="primary.main"
+                  >
+                    {formatCurrency(stats.profitShare.totalPaid)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Card
+                sx={{
+                  border: "1px solid",
+                  borderColor:
+                    stats.profitShare.due > 0 ? "error.300" : "grey.300",
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
+                    Pending
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    color={
+                      stats.profitShare.due > 0 ? "error.main" : "text.primary"
+                    }
+                  >
+                    {formatCurrency(stats.profitShare.due)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ border: '1px solid', borderColor: 'success.300' }}>
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" gutterBottom>Total Earned ({stats.profitShare.percentage}%)</Typography>
-                <Typography variant="h5" fontWeight="bold" color="success.main">{formatCurrency(stats.profitShare.earned)}</Typography>
-                <Typography variant="caption" color="text.secondary">Based on net profit of your branch(es)</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ border: '1px solid', borderColor: 'primary.200' }}>
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" gutterBottom>Total Paid</Typography>
-                <Typography variant="h5" fontWeight="bold" color="primary.main">{formatCurrency(stats.profitShare.totalPaid)}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ border: '1px solid', borderColor: stats.profitShare.due > 0 ? 'error.300' : 'grey.300' }}>
-              <CardContent>
-                <Typography variant="body2" color="text.secondary" gutterBottom>Pending</Typography>
-                <Typography variant="h5" fontWeight="bold" color={stats.profitShare.due > 0 ? 'error.main' : 'text.primary'}>{formatCurrency(stats.profitShare.due)}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
+        )}
 
       {/* College Bonus — super admin only */}
       {isSuperAdmin && stats?.bonus && (
